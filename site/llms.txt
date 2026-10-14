@@ -1,0 +1,50 @@
+# AI Dial-Tone 0.0.1 — Agent-readable first-release guide
+
+Canonical Project Overview: /overview.html
+Machine-readable preview capability catalogue: /agents.json
+Product scope and exclusions: /scope.html and /api/product-scope.json
+Local Peer Lab API OpenAPI: /api/openapi.json (DOWNLOAD ONLY; NOT A HOSTED ENDPOINT)
+Complete source-based documentation: /llms-full.txt and /docs/index.html
+Human experience preview: /humans.html
+Frequently asked questions (63 answers): /faqs.html and /api/faqs.json
+Payment-to-BYOT experimental handoff: /docs/payment-telecom-handoff.html (only with origination disabled)
+
+## The product, not just the repository
+
+AI Dial-Tone is building an **end-to-end autonomous telephone-calling capability**.
+The intended single agent journey is discovery → server-verified human authorisation →
+independent telecoms route admission → x402 payment where managed access requires it →
+conversation and call events → provider-enforced termination → evidenced outcome.
+Managed calling and developer-supplied Asterisk/FreePBX are two access models to the
+same product. A telecoms provider retains independent routing and teardown authority.
+
+**Website:** the public product and machine-readable discovery entry point; currently static.
+**GitHub repository:** https://github.com/kierknoby/AI-Dial-Tone, the open-source developer
+implementation, code, tests and roadmap; not a separate BYOT-only offering.
+The complete journey is the DESIGN TARGET, not a claim of available 0.0.1 calling.
+
+## Current developer capabilities
+
+- Model-neutral local bot-to-bot PCM audio and event contract: /docs/quickstart.html
+  Run from source: `python tools/verify_first_call.py --out demo-output` (Python 3.11+ and aiohttp==3.13.3); the JSON verifier deliberately refuses real-call, payment or booking claims.
+- Experimental Asterisk/FreePBX connector: /docs/byot-asterisk.html
+- x402 admission research (no real payment): /docs/x402-payment-admission.html
+- Full developer reference and intended integration: /docs/index.html
+- Honest deployment readiness: /status.html
+
+**NOT A LIVE TELEPHONE SERVICE.** No verified real SIP/PSTN origination, hosted MCP/A2A, validated booking, real x402 settlement or public customer account exists. The disabled-by-default BYOT connector is experimental and tested against simulated Asterisk only. No static example proves a real call happened.
+
+## What an agent can test
+
+The standalone `kierknoby/AI-Dial-Tone` source includes a localhost-only Python Peer Lab in `peer-lab/` with two different bearer-authenticated bot roles, a separate operator-issued/revocable lab mandate, single-use WebSocket admission tickets, duplex 16-kHz PCM16 frames (`DT01`, 656 bytes), unverified text turns, DTMF events, and operator stop. The optional audio-first runtime processes actual received PCM through ASR, a model-compatible chat endpoint and TTS. Its offline recogniser was insufficiently accurate and hosted real-model quality is not verified. See /docs/quickstart.html and /docs/audio-first-voice.html.
+
+The website provides a script-only sandbox at /playground.html and static examples at /api/challenges.json. `agents.json` is a project-specific manifest, NOT a standard A2A Agent Card. Do not send network requests to `https://ai.dial-tone.uk/v1/...`; those services are not hosted.
+
+## Trust rule
+
+A model assertion is not verified ASR. A local `session.ended` is not provider-confirmed hangup. A simulated “booked” response is not a real booking. Do not claim real-world success without independent proof.
+
+BYOT Asterisk: optional, disabled-by-default self-hosted connector, fake ARI and real loopback UDP tests only; no real Asterisk/PSTN validation. See /docs/byot-asterisk.html and /api/byot-openapi.json. Do not call public hosted endpoints: none exist.
+
+Pre-call qualification: /readiness.html and /docs/pre-call-principle.html. The optional BYOT /v1/readiness is an operator-only local observation of Asterisk ARI PJSIP endpoint state, not a guarantee of PSTN delivery or permission to call.
+Origins and open-source contributor background: /about.html and /docs/origins.html.

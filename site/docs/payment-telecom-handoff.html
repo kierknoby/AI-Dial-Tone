@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#000000"><meta name="color-scheme" content="dark light">
+<title>Connecting payment admission to a telephone mandate | AI Dial-Tone</title><meta name="description" content="Version 0.0.1 · Local experimental integration · NOT LIVE TELEPHONY OR SETTLEMENT.">
+<link rel="canonical" href="https://ai.dial-tone.uk/docs/payment-telecom-handoff.html"><meta property="og:url" content="https://ai.dial-tone.uk/docs/payment-telecom-handoff.html"><meta property="og:type" content="website"><meta property="og:title" content="Connecting payment admission to a telephone mandate | AI Dial-Tone"><meta property="og:description" content="Version 0.0.1 · Local experimental integration · NOT LIVE TELEPHONY OR SETTLEMENT."><meta property="og:image" content="https://ai.dial-tone.uk/assets/social.svg">
+<link rel="icon" type="image/svg+xml" href="/assets/logo.svg"><link rel="manifest" href="/site.webmanifest"><link rel="alternate" type="text/plain" title="Agents" href="/llms.txt"><link rel="stylesheet" href="/assets/style.css"><link rel="stylesheet" href="/assets/reference.css">
+<script type="module" src="/assets/app.js"></script><script type="module" src="/assets/reference.js"></script>
+</head><body data-palette="blue">
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="topline"><div class="container topline-inner"><span class="status-dot"></span><span>TECHNICAL PREVIEW</span><span class="topline-separator" aria-hidden="true">/</span><span>Live PSTN calling and payments are not enabled</span><a href="/status.html">Development status <span aria-hidden="true">↗</span></a></div></div>
+<header class="site-header"><div class="container nav-inner"><a class="brand" href="/" aria-label="AI Dial-Tone home"><img src="/assets/logo.svg" width="39" height="39" alt=""><span><span class="brand-ai">AI</span> DIAL-<b>TONE</b></span></a><nav class="nav-links" id="primary-nav" aria-label="Main navigation"><a class="nav-link " href="/overview.html" >Overview</a><a class="nav-link " href="/playground.html" >Playground</a><a class="nav-link is-current" href="/docs/index.html" aria-current="page">Developers</a><a class="nav-link " href="/agents.html" >For Agents</a><a class="nav-link " href="/humans.html" >For Humans</a><a class="nav-link " href="/faqs.html" >FAQs</a><a class="nav-link " href="/about.html" >About</a><a class="nav-link " href="/status.html" >Status</a></nav><a class="nav-cta" href="/docs/quickstart.html">Start building <span aria-hidden="true">↗</span></a><button type="button" class="menu-button" aria-expanded="false" aria-controls="primary-nav" aria-label="Open navigation"><span></span><span></span><span></span></button></div></header>
+<main id="main"><section class="ref-section"><div class="ref-layout container"><aside class="ref-sidebar" aria-label="Documentation navigation"><div class="ref-sidebar-inner"><span class="ref-sidebar-eyebrow">DOCUMENTATION / LOCAL LAB</span><a class="ref-home" href="/docs/index.html">← Documentation home</a><nav class="ref-nav"><a href="/docs/overview.html"  class="ref-nav-link ">Start here</a><a href="/docs/quickstart.html"  class="ref-nav-link ">Local quickstart</a><a href="/docs/architecture.html"  class="ref-nav-link ">Architecture</a><a href="/docs/authentication.html"  class="ref-nav-link ">Authentication</a><a href="/docs/api.html"  class="ref-nav-link ">HTTP API</a><a href="/docs/lifecycle.html"  class="ref-nav-link ">Call lifecycle</a><a href="/docs/events.html"  class="ref-nav-link ">Events &amp; evidence</a><a href="/docs/media.html"  class="ref-nav-link ">Media &amp; framing</a><a href="/docs/agents.html"  class="ref-nav-link ">SDKs and MCP</a><a href="/docs/provider.html"  class="ref-nav-link ">Provider integration</a><a href="/docs/errors.html"  class="ref-nav-link ">Errors &amp; recovery</a><a href="/docs/challenge.html"  class="ref-nav-link ">First Call challenge</a><a href="/docs/readiness.html"  class="ref-nav-link ">Release readiness</a><a href="/docs/peer-contract.html"  class="ref-nav-link ">Bot peer contract</a><a href="/docs/human-journey.html"  class="ref-nav-link ">For humans</a><a href="/docs/native-security.html"  class="ref-nav-link ">Native security</a><a href="/docs/roadmap.html"  class="ref-nav-link ">Roadmap</a><a href="/docs/peer-lab.html"  class="ref-nav-link ">First Call Peer Lab</a><a href="/docs/audio-first-voice.html"  class="ref-nav-link ">Audio-first voice</a><a href="/docs/byot-asterisk.html"  class="ref-nav-link ">BYOT: Asterisk</a><a href="/docs/x402-payment-admission.html"  class="ref-nav-link ">x402 payment admission</a><a href="/docs/payment-telecom-handoff.html" aria-current="page" class="ref-nav-link ref-active">x402 to BYOT handoff</a><a href="/docs/faq.html"  class="ref-nav-link ">Frequently asked questions</a><a href="/docs/pre-call-principle.html"  class="ref-nav-link ">Pre-call qualification</a><a href="/docs/origins.html"  class="ref-nav-link ">Origins &amp; community engineering</a></nav><div class="ref-sidebar-note">Preview only. No live PSTN, x402 settlement, or hosted agent API.</div></div></aside><article class="ref-article" id="reference-article"><div class="ref-page-meta"><a href="/docs/index.html">Reference</a><span> / </span><strong>Connecting payment admission to a telephone mandate</strong></div><div class="ref-label"><span class="ref-dot"></span> CONTRACT: LOCAL LAB · NOT LIVE TELEPHONY</div><div class="ref-markdown"><h1 id="connecting-payment-admission-to-a-telephone-mandate">Connecting payment admission to a telephone mandate</h1>
+<p><strong>Version 0.0.1 · Local experimental integration · NOT LIVE TELEPHONY OR SETTLEMENT.</strong></p>
+<p>The original AI Dial-Tone idea is one controlled sequence: a human directs an agent, the human authorises a bounded call, the managed service accepts an x402 payment when required, the telephony gateway qualifies and starts the call, and the agent receives a truthful outcome. The public components now include a <strong>local proof of a safe handoff</strong>, not that entire live service.</p>
+<h2 id="the-real-trust-boundaries">The real trust boundaries</h2>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Responsible actor</th>
+<th>Evidence / 0.0.1 status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Task and destination</td>
+<td>Human / operator</td>
+<td>Operator bearer in the lab; not identity or consent verification</td>
+</tr>
+<tr>
+<td>Fixed upfront price</td>
+<td>x402 gate</td>
+<td>HTTP 402 challenge with bound network, asset, amount, recipient and resource</td>
+</tr>
+<tr>
+<td>Settlement</td>
+<td>Trusted facilitator</td>
+<td>Fake facilitator only; <strong>no real USDC transfer</strong></td>
+</tr>
+<tr>
+<td>Single-use permit</td>
+<td>Payment gate</td>
+<td>Cryptographically random, consumed once; not a telephone call</td>
+</tr>
+<tr>
+<td>PBX mandate</td>
+<td>Operator-side handoff</td>
+<td>Local-only HTTP POST to the BYOT operator API; same destination and maximum seconds</td>
+</tr>
+<tr>
+<td>Call admission</td>
+<td>Asterisk adapter</td>
+<td>Different agent bearer, preconfigured PJSIP endpoint and disabled-by-default origination</td>
+</tr>
+<tr>
+<td>Real media / hangup</td>
+<td>FreePBX/Asterisk and gateway</td>
+<td>Simulated ARI/WebSocket/RTP integration; no certified PBX or carrier release</td>
+</tr>
+<tr>
+<td>Task confirmation</td>
+<td>Agent / destination</td>
+<td>No real reservation verification available</td>
+</tr>
+</tbody>
+</table>
+<p>The model must never hold the operator bearer, PBX password, receiving wallet signing key, or routing configuration. It cannot choose a new destination during the handoff. Payment alone is insufficient to originate.</p>
+<h2 id="what-has-actually-been-implemented">What has actually been implemented</h2>
+<p><code>integration/handoff.py</code> provides <code>LocalHandoff</code>. It checks that the Asterisk adapter is the expected experimental <code>0.0.1</code> component and that <strong>live origination is explicitly disabled</strong>. It consumes a paid lab permit from <code>X402Gate</code>, then issues a separate BYOT mandate with exactly the original destination and maximum duration.</p>
+<p>It rejects non-loopback endpoints, credential problems, mismatched mandate replies, expired/replayed permits, and live-origination backends. An ambiguous HTTP outcome after permit consumption becomes <strong>unresolved</strong>: never silently retry or claim a refund. It never creates a call or passes the agent's credentials into the operator side.</p>
+<p>This makes the two reference components consistent and testable. It intentionally <strong>does not turn a mock settlement into the right to place a real paid call</strong>. A production gateway will need independently authenticated humans, persistent payment records, verified USDC settlement, reconciliation, a real FreePBX policy engine and a provider-owned hangup watchdog.</p>
+<h2 id="reproduce-the-contract-integration">Reproduce the contract integration</h2>
+<p>Run from the standalone repository root:</p>
+<pre><code class="language-bash">python -m pip install 'aiohttp==3.13.3'
+python -m unittest discover -s integration/tests -p 'test_*.py' -v
+</code></pre>
+<p>The tests use the real x402 gate, a local BYOT-compatible HTTP fixture, and the actual BYOT HTTP/WebSocket service with a fake ARI. They verify number and duration binding, one-use consumption, concurrent replay prevention, disabled-origination enforcement, rejection of swapped destinations, and safe failure. They are not an on-chain or SIP interoperability test.</p>
+<h2 id="the-agent-facing-product-still-needs-building">The agent-facing product still needs building</h2>
+<p>The agent should ultimately receive <strong>one stable discoverable interface</strong>, independent of whether the route is managed or BYOT. Required, separately verifiable stages include human consent, payment, SIP/WSS readiness, audio admission, network-controlled call states, forced termination, and a receipt that differentiates remote confirmation from model inference.</p>
+<p>The public proof deliberately leaves these stages separate so no agent can bypass an unfinished gate. See the <a href="/docs/byot-asterisk.html">BYOT reference</a>, <a href="/docs/x402-payment-admission.html">x402 reference</a>, <a href="/docs/native-security.html">security review</a>, and <a href="/faqs.html">frequently asked questions</a>.</p>
+</div><nav class="ref-pager" aria-label="Documentation pages"><a href="/docs/x402-payment-admission.html">← x402 payment admission and agent-first topology</a><a href="/docs/faq.html">Frequently asked questions →</a></nav></article><aside class="ref-aside" aria-label="On this page"><span class="ref-sidebar-eyebrow">ON THIS PAGE</span><nav><a class="ref-toc-link " href="#the-real-trust-boundaries">The real trust boundaries</a><a class="ref-toc-link " href="#what-has-actually-been-implemented">What has actually been implemented</a><a class="ref-toc-link " href="#reproduce-the-contract-integration">Reproduce the contract integration</a><a class="ref-toc-link " href="#the-agent-facing-product-still-needs-building">The agent-facing product still needs building</a></nav><a class="ref-download" href="/llms-full.txt">Full agent-readable guide ↗</a></aside></div></section></main>
+<footer class="site-footer"><div class="container"><div class="footer-top"><div><a class="brand brand-footer" href="/"><img src="/assets/logo.svg" width="36" height="36" alt=""><span><span class="brand-ai">AI</span> DIAL-<b>TONE</b></span></a><p>An end-to-end telephone capability for autonomous agents, with open-source developer integrations. Developed by Kieran Knowles-Byrne (@kierknoby), drawing on more than a decade of FreePBX and Asterisk engineering. Developed in a personal workspace and being prepared as an <a href="https://egyptianeyes.com" target="_blank" rel="noopener noreferrer">Egyptian Eyes</a> project.</p></div><div><h3>Explore</h3><a href="/overview.html">Project Overview</a><a href="/readiness.html">SIP readiness and diagnostics</a><a href="/about.html">The people behind it</a><a href="/playground.html">Playground</a><a href="/docs/index.html">Developer reference</a><a href="/agents.html">For autonomous agents</a><a href="/humans.html">For humans</a><a href="/faqs.html">FAQs</a><a href="/roadmap.html">Engineering roadmap</a><a href="/trust.html">Trust &amp; safety</a><a href="/status.html">Build status</a><a href="/privacy.html">Privacy notice</a></div><div><h3>For developers</h3><a href="/api/openapi.json">OpenAPI specification</a><a href="/agents.json">Machine-readable capabilities</a><a href="/docs/quickstart.html">Quickstart</a><a href="/docs/byot-asterisk.html">Bring Your Own Telecoms</a><a href="/docs/media.html">Media protocol</a><a href="https://github.com/kierknoby/AI-Dial-Tone" target="_blank" rel="noopener noreferrer">AI Dial-Tone source on GitHub ↗</a></div></div><div class="footer-bottom"><span>© 2026 AI Dial-Tone contributors</span><span>Engineering assisted by GPT-6 · No model-provider endorsement implied.</span><span>Preview only: live telephone calls and payments are not available.</span><a href="#main">Back to top ↑</a></div></div></footer>
+<div class="toast" role="status" aria-live="polite" data-toast></div>
+</body></html>

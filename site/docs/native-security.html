@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#000000"><meta name="color-scheme" content="dark light">
+<title>MicroSIP and Dial-Tone security: source inventory and limitations | AI Dial-Tone</title><meta name="description" content="Source review: EgyptianEyes/Dial-Tone, commit f0d15b3f958b91c20fad05693b74e3902533fc08 (main at review), 10 October 2026. Review scope includes the root README and extracted/MicroSIP-3.22.3-src/AccountDlg.cpp, settings.cpp, mainDlg.cpp, and global.cp">
+<link rel="canonical" href="https://ai.dial-tone.uk/docs/native-security.html"><meta property="og:url" content="https://ai.dial-tone.uk/docs/native-security.html"><meta property="og:type" content="website"><meta property="og:title" content="MicroSIP and Dial-Tone security: source inventory and limitations | AI Dial-Tone"><meta property="og:description" content="Source review: EgyptianEyes/Dial-Tone, commit f0d15b3f958b91c20fad05693b74e3902533fc08 (main at review), 10 October 2026. Review scope includes the root README and extracted/MicroSIP-3.22.3-src/AccountDlg.cpp, settings.cpp, mainDlg.cpp, and global.cp"><meta property="og:image" content="https://ai.dial-tone.uk/assets/social.svg">
+<link rel="icon" type="image/svg+xml" href="/assets/logo.svg"><link rel="manifest" href="/site.webmanifest"><link rel="alternate" type="text/plain" title="Agents" href="/llms.txt"><link rel="stylesheet" href="/assets/style.css"><link rel="stylesheet" href="/assets/reference.css">
+<script type="module" src="/assets/app.js"></script><script type="module" src="/assets/reference.js"></script>
+</head><body data-palette="blue">
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="topline"><div class="container topline-inner"><span class="status-dot"></span><span>TECHNICAL PREVIEW</span><span class="topline-separator" aria-hidden="true">/</span><span>Live PSTN calling and payments are not enabled</span><a href="/status.html">Development status <span aria-hidden="true">↗</span></a></div></div>
+<header class="site-header"><div class="container nav-inner"><a class="brand" href="/" aria-label="AI Dial-Tone home"><img src="/assets/logo.svg" width="39" height="39" alt=""><span><span class="brand-ai">AI</span> DIAL-<b>TONE</b></span></a><nav class="nav-links" id="primary-nav" aria-label="Main navigation"><a class="nav-link " href="/overview.html" >Overview</a><a class="nav-link " href="/playground.html" >Playground</a><a class="nav-link is-current" href="/docs/index.html" aria-current="page">Developers</a><a class="nav-link " href="/agents.html" >For Agents</a><a class="nav-link " href="/humans.html" >For Humans</a><a class="nav-link " href="/faqs.html" >FAQs</a><a class="nav-link " href="/about.html" >About</a><a class="nav-link " href="/status.html" >Status</a></nav><a class="nav-cta" href="/docs/quickstart.html">Start building <span aria-hidden="true">↗</span></a><button type="button" class="menu-button" aria-expanded="false" aria-controls="primary-nav" aria-label="Open navigation"><span></span><span></span><span></span></button></div></header>
+<main id="main"><section class="ref-section"><div class="ref-layout container"><aside class="ref-sidebar" aria-label="Documentation navigation"><div class="ref-sidebar-inner"><span class="ref-sidebar-eyebrow">DOCUMENTATION / LOCAL LAB</span><a class="ref-home" href="/docs/index.html">← Documentation home</a><nav class="ref-nav"><a href="/docs/overview.html"  class="ref-nav-link ">Start here</a><a href="/docs/quickstart.html"  class="ref-nav-link ">Local quickstart</a><a href="/docs/architecture.html"  class="ref-nav-link ">Architecture</a><a href="/docs/authentication.html"  class="ref-nav-link ">Authentication</a><a href="/docs/api.html"  class="ref-nav-link ">HTTP API</a><a href="/docs/lifecycle.html"  class="ref-nav-link ">Call lifecycle</a><a href="/docs/events.html"  class="ref-nav-link ">Events &amp; evidence</a><a href="/docs/media.html"  class="ref-nav-link ">Media &amp; framing</a><a href="/docs/agents.html"  class="ref-nav-link ">SDKs and MCP</a><a href="/docs/provider.html"  class="ref-nav-link ">Provider integration</a><a href="/docs/errors.html"  class="ref-nav-link ">Errors &amp; recovery</a><a href="/docs/challenge.html"  class="ref-nav-link ">First Call challenge</a><a href="/docs/readiness.html"  class="ref-nav-link ">Release readiness</a><a href="/docs/peer-contract.html"  class="ref-nav-link ">Bot peer contract</a><a href="/docs/human-journey.html"  class="ref-nav-link ">For humans</a><a href="/docs/native-security.html" aria-current="page" class="ref-nav-link ref-active">Native security</a><a href="/docs/roadmap.html"  class="ref-nav-link ">Roadmap</a><a href="/docs/peer-lab.html"  class="ref-nav-link ">First Call Peer Lab</a><a href="/docs/audio-first-voice.html"  class="ref-nav-link ">Audio-first voice</a><a href="/docs/byot-asterisk.html"  class="ref-nav-link ">BYOT: Asterisk</a><a href="/docs/x402-payment-admission.html"  class="ref-nav-link ">x402 payment admission</a><a href="/docs/payment-telecom-handoff.html"  class="ref-nav-link ">x402 to BYOT handoff</a><a href="/docs/faq.html"  class="ref-nav-link ">Frequently asked questions</a><a href="/docs/pre-call-principle.html"  class="ref-nav-link ">Pre-call qualification</a><a href="/docs/origins.html"  class="ref-nav-link ">Origins &amp; community engineering</a></nav><div class="ref-sidebar-note">Preview only. No live PSTN, x402 settlement, or hosted agent API.</div></div></aside><article class="ref-article" id="reference-article"><div class="ref-page-meta"><a href="/docs/index.html">Reference</a><span> / </span><strong>MicroSIP and Dial-Tone security: source inventory and limitations</strong></div><div class="ref-label"><span class="ref-dot"></span> CONTRACT: LOCAL LAB · NOT LIVE TELEPHONY</div><div class="ref-markdown"><h1 id="microsip-and-dial-tone-security-source-inventory-and-limitations">MicroSIP and Dial-Tone security: source inventory and limitations</h1>
+<p><strong>Source review: EgyptianEyes/Dial-Tone, commit <code>f0d15b3f958b91c20fad05693b74e3902533fc08</code> (<code>main</code> at review), 10 October 2026.</strong> Review scope includes the root README and <code>extracted/MicroSIP-3.22.3-src/AccountDlg.cpp</code>, <code>settings.cpp</code>, <code>mainDlg.cpp</code>, and <code>global.cpp</code>. This is a <strong>source-feature inventory</strong>, not a vulnerability audit or live certificate/media verification. The Windows executable was not rebuilt in this documentation pass.</p>
+<h2 id="what-the-native-repository-actually-contains">What the native repository actually contains</h2>
+<p>Dial-Tone is MicroSIP-derived C++ using PJProject/PJSUA. It retains the SIP account registration and call/media stack. <code>AccountDlg.cpp</code> exposes UDP, TCP and TLS transport options and these media policies: Disabled, Optional SRTP (<code>RTP/AVP</code>), Mandatory SRTP (<code>RTP/SAVP</code>), combined DTLS-SRTP/SRTP, and DTLS-SRTP. <code>settings.cpp</code> persists the SRTP setting. <code>mainDlg.cpp</code> handles authenticated SIP OPTIONS challenges (<code>401</code> and <code>407</code>), collects the result, selected transport, source endpoint and elapsed time, and generates pre-call readiness diagnostics.</p>
+<p>The native README documents registration, transport, audio device, codec, OPTIONS response and latency tests. <code>READY</code> requires suitable local checks, registration, and a successful SIP OPTIONS response. Non-registrar accounts remain <code>DEGRADED</code>; RTT above 1,000 ms is degraded. Recent readiness is associated with a subsequent outgoing call for up to 60 seconds. The actual call's answer and RTP still require separate verification.</p>
+<p>Read the <a href="https://github.com/EgyptianEyes/Dial-Tone/blob/main/README.md">source README</a> and <a href="https://github.com/EgyptianEyes/Dial-Tone/blob/main/extracted/MicroSIP-3.22.3-src/AccountDlg.cpp">native account security options</a>.</p>
+<h2 id="what-we-must-carry-forward-and-what-cannot-be-inherited">What we MUST carry forward, and what cannot be inherited</h2>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Native Dial-Tone</th>
+<th>AI/headless/browser requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SIP signalling</td>
+<td>UDP, TCP, TLS settings</td>
+<td><strong>TLS only</strong> on the controlled PBX hop, with validated peer identity; no silent downgrade</td>
+</tr>
+<tr>
+<td>SIP authentication</td>
+<td>PJSIP challenge-based SIP credentials</td>
+<td>Credentials remain at the PBX side, never in model prompts or browser-exposed backend config</td>
+</tr>
+<tr>
+<td>Media encryption</td>
+<td>Disabled, Optional SRTP, Mandatory SRTP, DTLS-SRTP choices</td>
+<td><strong>Mandatory</strong> encrypted media on SIP/WebRTC public hops; reject optional, disabled and downgrade outcomes</td>
+</tr>
+<tr>
+<td>Browser media</td>
+<td>Windows native audio and PJSUA</td>
+<td>Browser uses WebRTC DTLS-SRTP, secure WSS signalling, ICE and permissioned microphone; not a native-source port</td>
+</tr>
+<tr>
+<td>Remote media gateway</td>
+<td>No agent-facing media protocol</td>
+<td>TLS-protected, tenant-bound, short-lived media tickets; strict framing, limits and reconciliation</td>
+</tr>
+<tr>
+<td>Readiness</td>
+<td>Registration, OPTIONS, codecs, devices, response time</td>
+<td>Reproduce semantic checkpoints in service; distinguish local SIP reachability from actual carrier connectivity</td>
+</tr>
+<tr>
+<td>Trace</td>
+<td>Call states, identifiers, codec and RTP statistics</td>
+<td>Structured redacted traces; distinguish provider-confirmed events from model-supplied claims</td>
+</tr>
+<tr>
+<td>Recording</td>
+<td>Native recording capability</td>
+<td>Recording disabled by default, explicit retention/legal-basis review and restricted access</td>
+</tr>
+<tr>
+<td>Redirects/transfer</td>
+<td>Supported in native softphone</td>
+<td>Deny unattended REFER, 3xx redirection and transfers to unclassified destinations</td>
+</tr>
+<tr>
+<td>Runtime integrity</td>
+<td>CI builds unsigned native executable</td>
+<td>Pin dependencies, sign release artefacts, rotate secrets, protect supply chain and keep release provenance</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Important:</strong> PJSIP's <strong>optional</strong> SRTP setting may negotiate unencrypted RTP and must not be accepted by a production AI security profile. For SDES-SRTP, TLS protects key material conveyed in signalling; for DTLS-SRTP, the media handshake derives keys. PJSIP documentation also notes build and backend requirements for DTLS-SRTP: merely showing a configuration option does not prove support in a particular binary. See <a href="https://docs.pjsip.org/en/latest/specific-guides/security/srtp.html">PJSIP SRTP guide</a> and <a href="https://www.microsip.org/help">MicroSIP media encryption help</a>.</p>
+<h2 id="readiness-truth-table">Readiness truth table</h2>
+<table>
+<thead>
+<tr>
+<th>Evidence</th>
+<th>What it demonstrates</th>
+<th>What it does not demonstrate</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PJSUA account exists, SIP REGISTER accepted</td>
+<td>This account can register</td>
+<td>Dialplan permits the destination</td>
+</tr>
+<tr>
+<td>OPTIONS final 2xx from registrar/target, current TLS transport</td>
+<td>SIP endpoint responded recently</td>
+<td>PSTN carrier reachable, INVITE accepted</td>
+</tr>
+<tr>
+<td>Local sound device and codec present</td>
+<td>Endpoint can prepare local media</td>
+<td>Remote hearing the agent or bidirectional RTP</td>
+</tr>
+<tr>
+<td>Asterisk ARI <code>StasisStart</code>/call answered</td>
+<td>A channel was originated/answered</td>
+<td>Any restaurant booking completed</td>
+</tr>
+<tr>
+<td>Media WebSocket frames flowing both ways</td>
+<td>Packets cross our gateway</td>
+<td>Transcription accurate, recipient hears intelligible speech</td>
+</tr>
+<tr>
+<td>Provider's <code>Hangup</code> / termination event</td>
+<td>Network channel ended</td>
+<td>The business confirmed a reservation</td>
+</tr>
+</tbody>
+</table>
+<p>The local contract exercise in <code>lib/peer-contract.mjs</code> rejects missing TLS/certificate evidence, disabled/optional SRTP, stale OPTIONS results and unverified route policy. It also marks all observations unauthenticated and <code>network_call_authorised=false</code>. It does <strong>not</strong> provide or validate real SIP certificates.</p>
+<h2 id="asterisk-media-and-trust-boundaries">Asterisk media and trust boundaries</h2>
+<p><code>chan_websocket</code> is documented for Asterisk 22.6.0+, 21.11.0+, 20.16.0+ and 23.x, with binary audio and text control frames, and <code>MEDIA_START</code>, <code>MEDIA_XOFF</code>, <code>MEDIA_XON</code> signals. Later versions support a JSON control format. Pin the installed version before writing a production adapter, verify codec/frame interpretation, and never connect the ARI/media interface directly to the public Internet. See <a href="https://docs.asterisk.org/Configuration/Channel-Drivers/WebSocket/">Asterisk WebSocket media documentation</a>.</p>
+<p>Production hardening is still unverified: test the exact native TLS certificate behaviour and digest algorithms, confirm secure transport in Asterisk, require a valid server certificate and suitable SRTP policy, test ICE/TURN and DTLS-SRTP on browsers, enforce independent call cutoff at the PBX/SBC, prevent redirect bypass, and run external security review.</p>
+</div><nav class="ref-pager" aria-label="Documentation pages"><a href="/docs/human-journey.html">← For humans: ask an agent to make a call</a><a href="/docs/roadmap.html">Living roadmap: from test lab to an agent telephone service →</a></nav></article><aside class="ref-aside" aria-label="On this page"><span class="ref-sidebar-eyebrow">ON THIS PAGE</span><nav><a class="ref-toc-link " href="#what-the-native-repository-actually-contains">What the native repository actually contains</a><a class="ref-toc-link " href="#what-we-must-carry-forward-and-what-cannot-be-inherited">What we MUST carry forward, and what cannot be inherited</a><a class="ref-toc-link " href="#readiness-truth-table">Readiness truth table</a><a class="ref-toc-link " href="#asterisk-media-and-trust-boundaries">Asterisk media and trust boundaries</a></nav><a class="ref-download" href="/llms-full.txt">Full agent-readable guide ↗</a></aside></div></section></main>
+<footer class="site-footer"><div class="container"><div class="footer-top"><div><a class="brand brand-footer" href="/"><img src="/assets/logo.svg" width="36" height="36" alt=""><span><span class="brand-ai">AI</span> DIAL-<b>TONE</b></span></a><p>An end-to-end telephone capability for autonomous agents, with open-source developer integrations. Developed by Kieran Knowles-Byrne (@kierknoby), drawing on more than a decade of FreePBX and Asterisk engineering. Developed in a personal workspace and being prepared as an <a href="https://egyptianeyes.com" target="_blank" rel="noopener noreferrer">Egyptian Eyes</a> project.</p></div><div><h3>Explore</h3><a href="/overview.html">Project Overview</a><a href="/readiness.html">SIP readiness and diagnostics</a><a href="/about.html">The people behind it</a><a href="/playground.html">Playground</a><a href="/docs/index.html">Developer reference</a><a href="/agents.html">For autonomous agents</a><a href="/humans.html">For humans</a><a href="/faqs.html">FAQs</a><a href="/roadmap.html">Engineering roadmap</a><a href="/trust.html">Trust &amp; safety</a><a href="/status.html">Build status</a><a href="/privacy.html">Privacy notice</a></div><div><h3>For developers</h3><a href="/api/openapi.json">OpenAPI specification</a><a href="/agents.json">Machine-readable capabilities</a><a href="/docs/quickstart.html">Quickstart</a><a href="/docs/byot-asterisk.html">Bring Your Own Telecoms</a><a href="/docs/media.html">Media protocol</a><a href="https://github.com/kierknoby/AI-Dial-Tone" target="_blank" rel="noopener noreferrer">AI Dial-Tone source on GitHub ↗</a></div></div><div class="footer-bottom"><span>© 2026 AI Dial-Tone contributors</span><span>Engineering assisted by GPT-6 · No model-provider endorsement implied.</span><span>Preview only: live telephone calls and payments are not available.</span><a href="#main">Back to top ↑</a></div></div></footer>
+<div class="toast" role="status" aria-live="polite" data-toast></div>
+</body></html>

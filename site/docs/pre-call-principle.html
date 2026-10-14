@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#000000"><meta name="color-scheme" content="dark light">
+<title>Pre-call qualification: can the agent actually make a call? | AI Dial-Tone</title><meta name="description" content="Principle: test everything that can be tested before committing a human to a call. The user should not be interrupted merely to find out whether an AI agent was assigned a broken SIP path. This is the engineering principle carried forward from the or">
+<link rel="canonical" href="https://ai.dial-tone.uk/docs/pre-call-principle.html"><meta property="og:url" content="https://ai.dial-tone.uk/docs/pre-call-principle.html"><meta property="og:type" content="website"><meta property="og:title" content="Pre-call qualification: can the agent actually make a call? | AI Dial-Tone"><meta property="og:description" content="Principle: test everything that can be tested before committing a human to a call. The user should not be interrupted merely to find out whether an AI agent was assigned a broken SIP path. This is the engineering principle carried forward from the or"><meta property="og:image" content="https://ai.dial-tone.uk/assets/social.svg">
+<link rel="icon" type="image/svg+xml" href="/assets/logo.svg"><link rel="manifest" href="/site.webmanifest"><link rel="alternate" type="text/plain" title="Agents" href="/llms.txt"><link rel="stylesheet" href="/assets/style.css"><link rel="stylesheet" href="/assets/reference.css">
+<script type="module" src="/assets/app.js"></script><script type="module" src="/assets/reference.js"></script>
+</head><body data-palette="blue">
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="topline"><div class="container topline-inner"><span class="status-dot"></span><span>TECHNICAL PREVIEW</span><span class="topline-separator" aria-hidden="true">/</span><span>Live PSTN calling and payments are not enabled</span><a href="/status.html">Development status <span aria-hidden="true">↗</span></a></div></div>
+<header class="site-header"><div class="container nav-inner"><a class="brand" href="/" aria-label="AI Dial-Tone home"><img src="/assets/logo.svg" width="39" height="39" alt=""><span><span class="brand-ai">AI</span> DIAL-<b>TONE</b></span></a><nav class="nav-links" id="primary-nav" aria-label="Main navigation"><a class="nav-link " href="/overview.html" >Overview</a><a class="nav-link " href="/playground.html" >Playground</a><a class="nav-link is-current" href="/docs/index.html" aria-current="page">Developers</a><a class="nav-link " href="/agents.html" >For Agents</a><a class="nav-link " href="/humans.html" >For Humans</a><a class="nav-link " href="/faqs.html" >FAQs</a><a class="nav-link " href="/about.html" >About</a><a class="nav-link " href="/status.html" >Status</a></nav><a class="nav-cta" href="/docs/quickstart.html">Start building <span aria-hidden="true">↗</span></a><button type="button" class="menu-button" aria-expanded="false" aria-controls="primary-nav" aria-label="Open navigation"><span></span><span></span><span></span></button></div></header>
+<main id="main"><section class="ref-section"><div class="ref-layout container"><aside class="ref-sidebar" aria-label="Documentation navigation"><div class="ref-sidebar-inner"><span class="ref-sidebar-eyebrow">DOCUMENTATION / LOCAL LAB</span><a class="ref-home" href="/docs/index.html">← Documentation home</a><nav class="ref-nav"><a href="/docs/overview.html"  class="ref-nav-link ">Start here</a><a href="/docs/quickstart.html"  class="ref-nav-link ">Local quickstart</a><a href="/docs/architecture.html"  class="ref-nav-link ">Architecture</a><a href="/docs/authentication.html"  class="ref-nav-link ">Authentication</a><a href="/docs/api.html"  class="ref-nav-link ">HTTP API</a><a href="/docs/lifecycle.html"  class="ref-nav-link ">Call lifecycle</a><a href="/docs/events.html"  class="ref-nav-link ">Events &amp; evidence</a><a href="/docs/media.html"  class="ref-nav-link ">Media &amp; framing</a><a href="/docs/agents.html"  class="ref-nav-link ">SDKs and MCP</a><a href="/docs/provider.html"  class="ref-nav-link ">Provider integration</a><a href="/docs/errors.html"  class="ref-nav-link ">Errors &amp; recovery</a><a href="/docs/challenge.html"  class="ref-nav-link ">First Call challenge</a><a href="/docs/readiness.html"  class="ref-nav-link ">Release readiness</a><a href="/docs/peer-contract.html"  class="ref-nav-link ">Bot peer contract</a><a href="/docs/human-journey.html"  class="ref-nav-link ">For humans</a><a href="/docs/native-security.html"  class="ref-nav-link ">Native security</a><a href="/docs/roadmap.html"  class="ref-nav-link ">Roadmap</a><a href="/docs/peer-lab.html"  class="ref-nav-link ">First Call Peer Lab</a><a href="/docs/audio-first-voice.html"  class="ref-nav-link ">Audio-first voice</a><a href="/docs/byot-asterisk.html"  class="ref-nav-link ">BYOT: Asterisk</a><a href="/docs/x402-payment-admission.html"  class="ref-nav-link ">x402 payment admission</a><a href="/docs/payment-telecom-handoff.html"  class="ref-nav-link ">x402 to BYOT handoff</a><a href="/docs/faq.html"  class="ref-nav-link ">Frequently asked questions</a><a href="/docs/pre-call-principle.html" aria-current="page" class="ref-nav-link ref-active">Pre-call qualification</a><a href="/docs/origins.html"  class="ref-nav-link ">Origins &amp; community engineering</a></nav><div class="ref-sidebar-note">Preview only. No live PSTN, x402 settlement, or hosted agent API.</div></div></aside><article class="ref-article" id="reference-article"><div class="ref-page-meta"><a href="/docs/index.html">Reference</a><span> / </span><strong>Pre-call qualification: can the agent actually make a call?</strong></div><div class="ref-label"><span class="ref-dot"></span> CONTRACT: LOCAL LAB · NOT LIVE TELEPHONY</div><div class="ref-markdown"><h1 id="pre-call-qualification-can-the-agent-actually-make-a-call">Pre-call qualification: can the agent actually make a call?</h1>
+<p><strong>Principle:</strong> test everything that can be tested before committing a human to a call. The user should not be interrupted merely to find out whether an AI agent was assigned a broken SIP path. This is the engineering principle carried forward from the original <a href="https://github.com/EgyptianEyes/Dial-Tone">Dial-Tone Windows softphone</a>.</p>
+<h2 id="provenance-what-native-dial-tone-established">Provenance: what native Dial-Tone established</h2>
+<p>The MicroSIP-derived Windows application added a pre-call readiness control, <strong>local audible dial tone</strong> and <strong>Call Trace</strong>. Its published README documents the selected SIP account, registration, transport, sound devices, codecs, authenticated SIP OPTIONS response, endpoint and round-trip latency. The tone is generated <strong>locally</strong> when readiness is acceptable; it is <strong>not</strong> a tone supplied by the carrier or a guarantee that any particular number can be reached. <code>READY</code> in the Windows application is not a PSTN completion certificate. A successful qualification can be associated with a subsequent outgoing call within 60 seconds on the same account.</p>
+<p>An autonomous agent should receive the same level of evidence as structured, timestamped observations. An optional echo or test-tone path should be <strong>isolated and non-human</strong>, so audio-path tests need not ring an unsuspecting recipient.</p>
+<h2 id="proposed-qualification-stages">Proposed qualification stages</h2>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Before a real call?</th>
+<th>Evidence required</th>
+<th>Scope and limitation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0. Authenticated mandate</td>
+<td>Yes</td>
+<td>Server-verifiable human permission, destination class, cost and duration constraints</td>
+<td>Approval is not proof of network readiness</td>
+</tr>
+<tr>
+<td>1. SIP endpoint</td>
+<td>Yes</td>
+<td>PBX-reported PJSIP endpoint presence, registration/qualify status and observation time</td>
+<td>An online trunk or endpoint does not prove its dialplan or PSTN path</td>
+</tr>
+<tr>
+<td>2. SIP response</td>
+<td>Yes</td>
+<td>Recent SIP OPTIONS response bound to the configured account/peer; transport, certificate, round-trip time</td>
+<td>OPTIONS 2xx proves that SIP service answered that check, <strong>not</strong> that a particular dialled number can be completed</td>
+</tr>
+<tr>
+<td>3. Security and route policy</td>
+<td>Yes</td>
+<td>TLS/verified peer, mandatory encrypted media policy, codec and approved routing class</td>
+<td>A route-policy decision is not evidence that a carrier will accept a later INVITE</td>
+</tr>
+<tr>
+<td>4. Controlled media loop</td>
+<td>When configured</td>
+<td>Isolated echo/tone exchange, RTP observations, timing and loss; never a real person's number</td>
+<td>Proves only this test media path at this time</td>
+</tr>
+<tr>
+<td>5. Real INVITE and answer</td>
+<td>No; this is the attempted call</td>
+<td>Asterisk and provider-attributed call state and media observations</td>
+<td>Real destination success becomes knowable only during actual call progress</td>
+</tr>
+<tr>
+<td>6. Task and release evidence</td>
+<td>After connection</td>
+<td>Confirmed hangup, measured usage, independently corroborated task status</td>
+<td>A model's statement does not prove booking or release</td>
+</tr>
+</tbody>
+</table>
+<p><strong>No fully non-dialling preflight can guarantee a future call will complete.</strong> The design goal is to eliminate predictable failures <strong>before</strong> placing the call, and ensure remaining uncertainty is visible. A paid managed route should be qualified before settlement where feasible; the project still needs an explicit failure/refund and settlement policy because pre-payment does not guarantee remote answer.</p>
+<h2 id="available-in-version-0-0-1">Available in version 0.0.1</h2>
+<p>The public BYOT connector now offers <strong><code>GET /v1/readiness</code></strong>, an operator-authenticated, <strong>read-only</strong> observation of its fixed configured PJSIP endpoint through Asterisk ARI, when connected. It does not originate, place a test call, issue a mandate, validate the dialplan, or claim to observe SIP OPTIONS directly. An ARI <code>online</code> value is only an endpoint-state observation. Its output includes a <code>not_proven</code> array and <code>network_call_authorised: false</code>. The originator must still separately require an authorised mandate and admission.</p>
+<p>Other full-fidelity native readiness checkpoints, authenticated OPTIONS, PBX-specific route inspection, isolated echo diagnostics, audible feedback and provider-certified results <strong>are not implemented in the AI version</strong>. See <a href="/docs/native-security.html">Native security</a>, <a href="/docs/byot-asterisk.html">BYOT Asterisk</a>, and <a href="/docs/readiness.html">Release readiness</a>.</p>
+<h2 id="acceptance-criteria-for-the-real-service">Acceptance criteria for the real service</h2>
+<ol>
+<li>The probe comes from an authenticated, authoritative PBX/SIP observer, not from client-submitted JSON or a model's claim.</li>
+<li>Observations are fresh, bound to the selected trunk/account and route policy, and invalidated on configuration, endpoint, IP or credential changes.</li>
+<li>SIP and media security must fail closed on TLS downgrade, certificate mismatch or optional/disabled SRTP when encryption is required.</li>
+<li>PBX/carrier routing decisions are recorded without inventing a destination response.</li>
+<li>The service exposes a clear distinction between <strong>route candidate</strong>, <strong>internal media verified</strong>, <strong>call connected</strong>, and <strong>remote conversation verified</strong>.</li>
+<li>A bot may stop and report the reason before ringing a human. A successful probe alone cannot trigger a billable call.</li>
+<li>Real hangup and charging limits must be independently enforced and reconciled at the PBX/carrier boundary.</li>
+</ol>
+<h2 id="why-it-matters-to-ai-agents">Why it matters to AI agents</h2>
+<p>An autonomous agent cannot sensibly ask a human to troubleshoot SIP or ring a recipient speculatively. It needs <strong>machine-readable confidence and a reason code</strong> before committing to an action. An audible local tone and useful Call Trace were powerful for an administrator; a trustworthy preflight receipt and structured call trace should be their agent-facing equivalents.</p>
+</div><nav class="ref-pager" aria-label="Documentation pages"><a href="/docs/faq.html">← Frequently asked questions</a><a href="/docs/origins.html">Origins, community work and technical provenance →</a></nav></article><aside class="ref-aside" aria-label="On this page"><span class="ref-sidebar-eyebrow">ON THIS PAGE</span><nav><a class="ref-toc-link " href="#provenance-what-native-dial-tone-established">Provenance: what native Dial-Tone established</a><a class="ref-toc-link " href="#proposed-qualification-stages">Proposed qualification stages</a><a class="ref-toc-link " href="#available-in-version-0-0-1">Available in version 0.0.1</a><a class="ref-toc-link " href="#acceptance-criteria-for-the-real-service">Acceptance criteria for the real service</a><a class="ref-toc-link " href="#why-it-matters-to-ai-agents">Why it matters to AI agents</a></nav><a class="ref-download" href="/llms-full.txt">Full agent-readable guide ↗</a></aside></div></section></main>
+<footer class="site-footer"><div class="container"><div class="footer-top"><div><a class="brand brand-footer" href="/"><img src="/assets/logo.svg" width="36" height="36" alt=""><span><span class="brand-ai">AI</span> DIAL-<b>TONE</b></span></a><p>An end-to-end telephone capability for autonomous agents, with open-source developer integrations. Developed by Kieran Knowles-Byrne (@kierknoby), drawing on more than a decade of FreePBX and Asterisk engineering. Developed in a personal workspace and being prepared as an <a href="https://egyptianeyes.com" target="_blank" rel="noopener noreferrer">Egyptian Eyes</a> project.</p></div><div><h3>Explore</h3><a href="/overview.html">Project Overview</a><a href="/readiness.html">SIP readiness and diagnostics</a><a href="/about.html">The people behind it</a><a href="/playground.html">Playground</a><a href="/docs/index.html">Developer reference</a><a href="/agents.html">For autonomous agents</a><a href="/humans.html">For humans</a><a href="/faqs.html">FAQs</a><a href="/roadmap.html">Engineering roadmap</a><a href="/trust.html">Trust &amp; safety</a><a href="/status.html">Build status</a><a href="/privacy.html">Privacy notice</a></div><div><h3>For developers</h3><a href="/api/openapi.json">OpenAPI specification</a><a href="/agents.json">Machine-readable capabilities</a><a href="/docs/quickstart.html">Quickstart</a><a href="/docs/byot-asterisk.html">Bring Your Own Telecoms</a><a href="/docs/media.html">Media protocol</a><a href="https://github.com/kierknoby/AI-Dial-Tone" target="_blank" rel="noopener noreferrer">AI Dial-Tone source on GitHub ↗</a></div></div><div class="footer-bottom"><span>© 2026 AI Dial-Tone contributors</span><span>Engineering assisted by GPT-6 · No model-provider endorsement implied.</span><span>Preview only: live telephone calls and payments are not available.</span><a href="#main">Back to top ↑</a></div></div></footer>
+<div class="toast" role="status" aria-live="polite" data-toast></div>
+</body></html>

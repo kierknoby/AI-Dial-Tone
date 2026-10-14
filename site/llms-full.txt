@@ -1,0 +1,1427 @@
+# AI Dial-Tone — Full agent-readable documentation
+
+**Documentation edition 0.0.1 (11 October 2026). Public-source Peer Lab; local only.**
+
+**NOT A LIVE CALLING SERVICE.** This is a static preview with synthetic scenarios and a local-only, public-source peer lab. No public MCP, A2A, PSTN, x402 settlement or hosted model calling API is available. A self-hosted, disabled-by-default experimental Asterisk ARI connector exists in byot/. The payments/ folder has an isolated x402 header/settlement-decision lab with a fake facilitator, not a deployed payment gateway. Do not infer otherwise from examples.
+
+TARGET PRODUCT: One end-to-end agent calling capability: discovery, human authorisation, independent provider route admission, optional managed x402 payment, conversation, provider-controlled hangup and verifiable outcome. Managed calling and self-hosted BYOT are two paths to the same product. WEBSITE = public product/discovery entry; GITHUB = open-source development and runnable local labs. Version 0.0.1 does not deliver a live end-to-end service.
+
+Index: /docs/index.html | Canonical Project Overview: /overview.html | Capability manifest: /agents.json | OpenAPI (local-only): /api/openapi.json | Scope: /api/product-scope.json (planned is not available)
+
+---
+
+<!-- /docs/overview.html -->
+# Overview
+
+**AI Dial-Tone 0.0.1 is an open-source agent communications development project.** It is not a hosted telephone platform or a booking service. No public API exists at `ai.dial-tone.uk` for originating calls, and the domain currently represents a planned static site.
+
+## What the repository actually contains
+
+- **Peer Lab (`peer-lab/`)**: a runnable Python 3.11+ localhost HTTP/WebSocket service connecting two separately authenticated bot processes, with bounded PCM media and a local operator who can end sessions.
+- **Voice runtime**: an optional experimental path from *received* PCM to speech recognition, a model-compatible text endpoint, speech synthesis and returned PCM. Tests use fixtures. No live LLM quality claim is made.
+- **BYOT Asterisk (`byot/`)**: an experimental self-hosted ARI/RTP connector. A human operator issues a one-use UK geographic mandate, the agent is admitted before dialling, and the fixed PJSIP endpoint is checked before any optional outbound originate. Real origination is off by default; tests use a simulated Asterisk and real local UDP, never a real carrier. See [BYOT Asterisk](/docs/byot-asterisk.html).
+- **Browser lab (`labs/web-softphone/`)**: an independent experimental browser SIP and agent-control interface, not a hosted service and not verified against Asterisk.
+- **Static site and fixtures (`site/`)**: documentation, synthetic examples and machine-readable declarations, with no live endpoints.
+- **Contracts (`contracts/`)**: versioned experimental JSON shapes for future human mandates and peer events. They are not proof of verified human authorisation.
+
+## What the project does not contain
+
+No independently verified real SIP origination or PSTN call, Asterisk interoperability report, carrier integration, independently verified booking, x402 settlement, hosted MCP/A2A endpoint, recording policy, customer accounts or provider-confirmed carrier hangup. No MicroSIP-derived Windows code is shipped here.
+
+## Choose a path
+
+**Developers and agents:** start with the [local quickstart](/docs/quickstart.html) and [Peer Lab](/docs/peer-lab.html). **Human users:** read the [human journey](/docs/human-journey.html), a proposed experience, not an available booking feature. For security and criteria for a real launch, read [readiness](/docs/readiness.html) and the [roadmap](/docs/roadmap.html).
+
+
+---
+
+<!-- /docs/quickstart.html -->
+# Quickstart: first local AI peer session
+
+This is a **reproducible public-source** example. It runs entirely on the developer's computer, uses fictional actors and does **not** dial a telephone number. You do not need a private laboratory package.
+
+## Prerequisites
+
+- Python 3.11 or newer, with `aiohttp==3.13.3` installed.
+- Optional `espeak` for audible locally synthesised phrases. Without it, a tone fallback demonstrates media transport only.
+- An isolated, non-production development machine.
+
+From the checkout root:
+
+```bash
+python -m pip install 'aiohttp==3.13.3'
+python tools/verify_first_call.py --out demo-output
+python -m unittest discover -s peer-lab/tests -p 'test_*.py' -v
+```
+
+For a repository-level walkthrough, expected JSON fields and troubleshooting see the root `FIRST-CALL.md` included in the GitHub source archive. The example starts an isolated loopback server, obtains an operator-issued lab mandate and single-use admission tickets, connects a caller and fictional restaurant bot separately, relays actual 16 kHz PCM, and shuts the session down. It writes `demo-output/proof.json`, two *received-audio* WAVs and `demo-output/verification.json`. The verifier exits non-zero if media, identity, session release or synthetic-evidence boundaries are inconsistent. It does not establish a real telephone call, model understanding or booking. The same entry point works from the repository root. Output is local; don't commit test recordings.
+
+## Run the lab server yourself
+
+```bash
+cd peer-lab
+python peer_lab.py --host 127.0.0.1 --port 8765
+```
+
+The server prints high-entropy, ephemeral **operator**, **caller**, and **peer** credentials into the terminal. Do not publish those credentials or expose the server beyond loopback. Its capabilities endpoint is `http://127.0.0.1:8765/v1/capabilities`; it deliberately advertises `real_pstn: false`.
+
+The REST request sequence is documented in [HTTP API](/docs/api.html). The binary audio format is in [Media](/docs/media.html). The machine-readable source-backed specification is [`/api/openapi.json`](/api/openapi.json), a **static copy describing this local-only server**, not an online API.
+
+## Optional experiments
+
+Run `python examples/audio_first_call.py` from `peer-lab/` for actual audio-derived recognition experiments, subject to its local speech dependencies. A high-quality ASR and real hosted LLM have **not** been accepted. Run `npm run check` at the repository root to validate static contracts and docs. Browser lab commands are in `labs/web-softphone/README.md`.
+
+## Optional self-hosted telecom connector
+
+The standalone `byot/` directory contains an **off-by-default**, experimental ARI/RTP bridge for an operator who already owns an isolated Asterisk endpoint. Start with [BYOT Asterisk](/docs/byot-asterisk.html) and its local fake-ARI tests. This is not a hosted API, and no real Asterisk/PSTN call has been verified.
+
+
+---
+
+<!-- /docs/architecture.html -->
+# Architecture
+
+AI Dial-Tone 0.0.1 separates **trusted operator control**, two **untrusted bot peers**, and media/events over localhost. This does not yet connect to a carrier or a PBX.
+
+## Implemented local session
+
+```text
+Operator bearer → issue/revoke lab mandate → Peer Lab HTTP control
+Caller bearer   → single-use ticket ──────────┐
+                                               │
+                Peer Lab WebSocket relay       ├── real PCM packets
+                                               │
+Peer bearer     → single-use ticket ──────────┘
+           → scoped event journal + local hard deadline
+```
+
+The two bots each authenticate using different bearer tokens. The operator cannot join as a bot. Both must be admitted before the session runs. Media flows between their separate WebSocket connections with role attribution, sequence checks and rate limits. The server tracks only the **lab transport** outcome. A local event hash chain is not independent network evidence.
+
+## Optional model integration
+
+`peer-lab/voice_peer.py` segments **received** PCM. `peer-lab/speech.py` supplies recognition/synthesis adapters; `peer-lab/model_adapter.py` calls a restricted, OpenAI-compatible *chat-completions protocol*. Credentials and model availability are supplied by the developer. The test model is a deterministic fixture, not a verified third-party LLM.
+
+## Not implemented
+
+The future private telephony service must separately enforce SIP TLS/certificate policy, SRTP/DTLS-SRTP, verified PBX and SBC routing, network-level call cutoff, cost policy, recording and human mandates. A JavaScript readiness policy or synthetic WebSocket event cannot substitute for PJSIP observations. See [Native SIP Security](/docs/native-security.html) and [Roadmap](/docs/roadmap.html).
+
+
+---
+
+<!-- /docs/authentication.html -->
+# Authentication and permissions
+
+The runnable Peer Lab uses three **distinct** bearer authorities. These are local test credentials, not real customer identities or legally sufficient human consent.
+
+| Authority | Allowed actions |
+| --- | --- |
+| Operator | Issue a synthetic mandate, revoke it, terminate an existing lab session |
+| Caller | Start one session from its assigned mandate, request a ticket, inspect its own events |
+| Peer | Inspect only its assigned pending sessions, request its own ticket, inspect its own events |
+
+## Connection admission
+
+Agent clients call `POST /v1/sessions/{sid}/tickets` with their own bearer credentials. They receive a short-lived single-use ticket, then connect to `/v1/sessions/{sid}/connect` by WebSocket. The **first JSON message** must contain `{"type":"admit","ticket":"..."}` within four seconds. Tickets last at most 20 seconds. Replays and cross-role tickets fail.
+
+All REST endpoints except `GET /v1/capabilities` require a bearer. Do not put bearer credentials in query strings, log them or upload terminal transcripts. The development server binds only to `127.0.0.1`, `::1`, or `localhost` from its CLI; it has not undergone public-facing security hardening.
+
+## What approval does not prove
+
+An operator bearer represents a **lab operator**, not a verified human subscriber. Future real calls need a server-held, authenticated human mandate, destination and budget policy, revocation at the provider, independent verification of termination, consent checks and records suitable for audit. An agent saying “the user approved” is not authorisation.
+
+
+---
+
+<!-- /docs/api.html -->
+# HTTP API: runnable local Peer Lab
+
+**Source:** `peer-lab/peer_lab.py`. **Base URL:** `http://127.0.0.1:8765`. This is a local development service, **not** `https://ai.dial-tone.uk/v1/` and **not** a SIP-call API.
+
+## Operations
+
+| Method | Path | Credential | Purpose |
+| --- | --- | --- | --- |
+| GET | `/v1/capabilities` | None | Verify explicitly non-PSTN capabilities |
+| POST | `/v1/mandates` | Operator | Issue bounded local mandate |
+| POST | `/v1/mandates/{mid}/revoke` | Operator | Cancel mandate and attached session |
+| POST | `/v1/sessions` | Caller | Start one mandate, with `Idempotency-Key` |
+| GET | `/v1/peers/inbox` | Peer | List only own waiting sessions |
+| GET | `/v1/sessions/{sid}` | Caller or assigned peer | Scoped state and event journal |
+| POST | `/v1/sessions/{sid}/stop` | Operator | Force an independent lab stop |
+| POST | `/v1/sessions/{sid}/tickets` | Assigned caller or peer | Create one-use WebSocket admission |
+| GET WebSocket | `/v1/sessions/{sid}/connect` | Single-use ticket in first frame | Duplex events and PCM |
+
+## Example mandate
+
+```http
+POST /v1/mandates HTTP/1.1
+Host: 127.0.0.1:8765
+Authorization: Bearer <OPERATOR_TOKEN>
+Content-Type: application/json
+
+{"caller_id":"demo-caller","peer_id":"demo-restaurant","task":"Ask a fictional restaurant about a table","max_seconds":40}
+```
+
+Next, the caller creates a session with `{ "mandate_id": "<mandate_id>" }` and an ASCII `Idempotency-Key` of 12–128 printable characters. The operator may revoke the mandate or stop the session at any point. This is a **simulated task conversation**; no restaurant is contacted.
+
+The [OpenAPI 3.1 specification](/api/openapi.json) is copied from this repository's `peer-lab/openapi.json`. `https://ai.dial-tone.uk/api/openapi.json` is only a **download URL for documentation**, not the service base URL. HTTP errors use `{ "error": "CODE" }`. Never infer a successful real-world booking from local `session.ended`.
+
+
+---
+
+<!-- /docs/lifecycle.html -->
+# Session lifecycle and termination
+
+The current Peer Lab has three session states: `awaiting_peers`, `running`, and `ended`. These are **local session states**, not SIP dialog states.
+
+## Sequence
+
+1. An operator creates a task mandate for one named caller and one named peer.
+2. The caller starts a session with a unique `Idempotency-Key`; the mandate cannot be spent twice.
+3. Both peers obtain independently authorised single-use tickets and connect before a 15-second join deadline.
+4. The service changes the session to `running`, starts the operator-set maximum duration (1–120 seconds), and relays events and PCM.
+5. A peer hangs up, disconnects, the operator revokes/stops, or the server's deadline expires. The server emits `session.ended` and closes both sockets.
+
+## What a closure means
+
+`HARD_DEADLINE` means the **local** relay stopped the session, not a carrier released a channel. `HUMAN_STOPPED` and `HUMAN_CANCELLED` demonstrate operator authority over the lab, not independently enforced Asterisk hangup. `TRANSPORT_DISCONNECTED` means the experiment lost a peer. A future calling adapter must reconcile actual SIP and carrier state after any timeout, crash, replay, or ambiguous disconnect.
+
+## Retry semantics
+
+A caller may safely retry the same session creation request only with the same mandate and idempotency key. Reusing the key with a different mandate fails. Replaying a used admission ticket or already consumed mandate fails. Retrying a **real** call must never be justified by a transport uncertainty alone.
+
+
+---
+
+<!-- /docs/events.html -->
+# Events, evidence, and truthful outcomes
+
+The server keeps a bounded **local** event list with a monotonically increasing sequence and a SHA-256 hash chain. Each event identifies the peer role or system; accepted text is explicitly tagged as an **unverified model assertion**.
+
+## Representative events
+
+- `session.created`: a caller consumed a lab mandate.
+- `peer.joined`: an assigned agent admitted with a single-use ticket.
+- `session.connected`: both assigned parties joined the local relay.
+- `agent.utterance`: text the agent **asserted**, not necessarily recognised from PCM.
+- `media.frame_batch`: aggregate frame accounting, not independent speech content verification.
+- `media.utterance_ended` and `media.interruption_requested`: protocol signals, not guaranteed TTS cancellation.
+- `session.ended`: a locally observed terminal event with reason.
+
+`GET /v1/sessions/{sid}` returns the session summary and attributed events to assigned parties. It does **not** return an immutable external audit log, signed PBX CDR, consent proof, restaurant confirmation or payment receipt.
+
+## Event evidence has limits
+
+A hash chain makes tampering detectable only if a trusted observer retained the earlier hash and the generating process itself is trusted. It cannot confirm that a carrier call ended or that a table was booked. **Never mark `booking_verified=true` or `real_phone_call=true` from model dialogue.** The service returns both as false.
+
+The event journal has a fixed safety quota; `session.ended` remains possible even when ordinary event emission is exhausted. The lab has no persistence, backups, retention controls or distributed event replay. See [Release readiness](/docs/readiness.html).
+
+
+---
+
+<!-- /docs/media.html -->
+# Real-time media and framing
+
+The current Peer Lab transports **actual PCM bytes** between two independent localhost clients over WebSocket. It does not generate or receive SIP RTP and has no verified PSTN audio.
+
+## Binary packet (656 bytes)
+
+| Byte offset | Size | Meaning |
+| --- | --- | --- |
+| 0 | 4 | ASCII magic `DT01` |
+| 4 | 4 | Big-endian unsigned 32-bit per-sender sequence |
+| 8 | 8 | Big-endian unsigned 64-bit timestamp in milliseconds |
+| 16 | 640 | PCM16 little-endian, signed, mono, 16 kHz = 20 ms |
+
+The server checks frame size, magic, strictly increasing sequence and per-role rate. A media frame is **not** a transcript and the timestamp comes from the sending client, not a trusted wall clock. PCM streams must be paced by the client. The local session duration is capped by the operator.
+
+## Text and control messages
+
+The WebSocket also carries `say` (unverified agent assertion), `dtmf` (a symbolic message, **not generated telephone tones**), `audio.end`, `audio.interrupt`, `hangup`, and `ping`. Receiving an interruption requests model/TTS cancellation; a real PSTN implementation still needs measured barge-in handling, jitter buffering, interruption race control and end-to-end audio quality tests.
+
+For full wire examples, see [Peer Lab](/docs/peer-lab.html) and the downloadable [peer OpenAPI](/api/openapi.json). For the experimental audio processing pipeline, see [Audio-first Voice](/docs/audio-first-voice.html).
+
+## Frame example
+
+```python
+import struct
+
+# Exactly one 20-ms frame: 16 kHz, mono PCM16 little-endian.
+samples = bytes(640)  # silence; not a real voice recording
+packet = struct.pack('!4sIQ', b'DT01', 1, 0) + samples
+assert len(packet) == 656
+```
+
+The `DT01` prefix is local Peer Lab framing. It is not an RTP, SIP or PSTN packet.
+
+
+---
+
+<!-- /docs/agents.html -->
+# Agent integration, SDKs, and MCP status
+
+AI Dial-Tone is designed for **model-neutral** agents. In 0.0.1 there is a Python client in `peer-lab/client.py`, protocol experiments in `labs/web-softphone/`, and a generic chat-compatible model adapter in `peer-lab/model_adapter.py`.
+
+## What agents can do today
+
+An agent process can authenticate as a named **local** caller or peer, request its own WebSocket ticket, exchange PCM and text/DTMF signals, react to interruptions, end a test session, and read its attributed events. See [Quickstart](/docs/quickstart.html) and the [`PeerClient` implementation](https://github.com/kierknoby/AI-Dial-Tone/blob/main/peer-lab/client.py) once the repository is published.
+
+A model adapter uses a restricted chat-completions response. It rejects model-requested tool calls and does not expose dialling, payment or booking powers. The audio-first path uses speech recognition before model reasoning, rather than silently accepting another bot's asserted transcript. Its offline recognition results do **not** meet real-booking accuracy.
+
+## Not offered at 0.0.1
+
+There is no hosted Model Context Protocol (MCP) endpoint, no A2A Agent Card service, no turnkey hosted SDK, no real AI agent registration, and no tool capable of originating a telephone call. `agents.json` is a **project-specific capability directory**, not a standard A2A Agent Card. A model should parse explicit feature booleans and must not assume future capabilities are live.
+
+Developers integrating a future paid service must separately obtain actual human consent, check policies and network readiness, verify real-world outcomes and respect session stop authority.
+
+
+---
+
+<!-- /docs/provider.html -->
+# Provider and Asterisk integration boundary
+
+**The 0.0.1 repository now contains a disabled-by-default Asterisk ARI connector in `byot/`, tested against a synthetic ARI server and network UDP.** This is a local reference implementation, not a verified or deployed SIP/PSTN integration; real Asterisk interoperability, SIP.js registration, PSTN reachability, and settlement remain untested.
+
+## Gateway acceptance requirements
+
+Before enabling live testing or any future private Asterisk/SBC adapter, independently verify the following against an **isolated** PBX with carrier egress disabled:
+
+1. Asterisk and TLS/WSS listeners authenticated with valid certificate and endpoint policy.
+2. SIP registration or configured-peer readiness and successful authenticated OPTIONS, without claiming this proves INVITE route or remote media.
+3. Mandatory SRTP/DTLS-SRTP where the endpoint and network permit it; reject downgrades. Confirm the negotiated media protection, not merely a checkbox.
+4. Actual INVITE, answer, bidirectional audio, RTP metrics, DTMF and release events.
+5. Independently enforce maximum session time **at the provider/PBX**, even if the AI process crashes.
+6. Reconcile unknown or partial states after process restart and network failure.
+7. Permit only explicitly approved test destinations before any UK geographic pilot.
+
+## Do not conflate products
+
+The Windows [Dial-Tone MicroSIP fork](https://github.com/EgyptianEyes/Dial-Tone) is a separate native application. Its security and readiness patterns have been reviewed, **not ported** into this Python service. The private telephony backend must remain separately reviewed and outside this public development release.
+
+For the public self-hosted reference, see [BYOT: Asterisk](/docs/byot-asterisk.html). The agent never supplies a trunk or arbitrary SIP endpoint.
+
+
+---
+
+<!-- /docs/errors.html -->
+# Errors and recovery rules
+
+Most Peer Lab REST errors return an HTTP error status and `{ "error": "UPPERCASE_CODE" }`. WebSocket protocol errors are similarly explicit. **Do not convert an error into a reported booking success.**
+
+## Typical failure cases
+
+| Code | Meaning | Safe response |
+| --- | --- | --- |
+| `UNAUTHORISED` | Missing/invalid bearer | Stop; obtain legitimate credentials |
+| `OPERATOR_ONLY`, `CALLER_ONLY`, `PEER_ONLY` | Wrong role | Stop, do not substitute another principal |
+| `MANDATE_EXPIRED`, `MANDATE_REVOKED`, `MANDATE_ALREADY_USED` | No valid mandate | Obtain new operator authorisation |
+| `IDEMPOTENCY_KEY_REQUIRED`, `IDEMPOTENCY_CONFLICT` | Missing/reused key | Fix caller transaction; do not dial again automatically |
+| `INVALID_OR_REPLAYED_TICKET`, `ADMISSION_TIMEOUT` | Failed one-use WebSocket admission | Re-authenticate only if session is still joinable |
+| `INVALID_PCM_FRAME`, `REPLAYED_OR_INVALID_PCM`, `MEDIA_RATE_LIMIT` | Malformed, duplicated or excessive media | Stop/slow source, preserve evidence |
+| `EVENT_QUOTA_EXCEEDED`, `MANDATE_CAPACITY_EXCEEDED`, `SESSION_CAPACITY_EXCEEDED`, `TICKET_CAPACITY_EXCEEDED` | Bounded resource exhausted | Restart local laboratory; never bypass limits |
+| `HARD_DEADLINE`, `TRANSPORT_DISCONNECTED`, `PEER_JOIN_TIMEOUT` | Local session ended | Treat as laboratory closure only; no carrier evidence |
+
+## Fail closed
+
+The voice runtime must stop or report uncertainty when ASR, model or TTS fails. A remote agent's text is not trusted ASR evidence. Reconnecting on ambiguous state may cause repeated action in a future real network and must wait for authoritative provider reconciliation.
+
+There is no live customer support, SLA, external provider callback or production fraud response process in 0.0.1.
+
+
+---
+
+<!-- /docs/challenge.html -->
+# First Call challenge (synthetic)
+
+This repository offers **two deliberately different** exercises. Neither contacts a telephone carrier or makes a booking.
+
+## Challenge A: browser lifecycle fixtures
+
+Open [Playground](/playground.html) to inspect answered, busy, no-answer, deadline and remote-hangup outcomes. Machine-readable vectors are provided under `/api/scenarios/`. Their source is a scripted browser simulator, and all calls are synthetic. The correct agent outcome is to report exactly what the fixture provides and **not** assert that a restaurant was called.
+
+## Challenge B: real local peer transport
+
+From the repository root:
+
+```bash
+python -m pip install 'aiohttp==3.13.3'
+python tools/verify_first_call.py --out demo-output
+```
+
+Two independently authenticated local clients pass actual PCM packets over WebSockets. Inspect `demo-output/proof.json`, both received WAVs, and `demo-output/verification.json`. The verifier fails if the purported local evidence is incomplete or mislabelled. Check that an authorised operator stop or hard deadline ends the session, that the journal hash chain is contiguous and that the agent's transcript assertion is not reported as independent recognition.
+
+## How to evaluate honestly
+
+Passing Challenge B proves local authentication, signalling and media forwarding, not accurate speech understanding, a human interlocutor, SIP registration, PSTN routing, booking confirmation, or compliant payment. The next acceptance gate is two independently implemented **real** speech/model peers solving unseen tasks reliably, followed by isolated Asterisk qualification.
+
+
+---
+
+<!-- /docs/readiness.html -->
+# Release readiness and validation gates
+
+**Version 0.0.1: local-only technical preview.** The existence of tests, a static site or a hash-chained session receipt does not prove a live phone service. Current evidence is entirely local and fixture-based.
+
+## Pre-call qualification is central to the design
+
+The original Windows Dial-Tone uses registered account, OPTIONS, audio and codec checks, a local audible tone, and Call Trace. AI Dial-Tone aims to bring that principle to autonomous agents as authenticated, machine-readable readiness evidence. The optional BYOT connector currently provides only an operator-authenticated, non-dialling **PJSIP endpoint-state observation** through ARI. `online` cannot establish routing, remote audio or PSTN reachability. See [Pre-call qualification](/docs/pre-call-principle.html).
+
+## What is checked
+
+- Node.js public-contract checks (`npm run check`), including synthetic site links and capability claims.
+- Python Peer Lab tests (`npm run test:peer`), including authentication, media sequence, deadlines and interruption behaviour.
+- Browser laboratory unit/contract tests (`cd labs/web-softphone && npm test`), plus Python bot tests.
+- Documentation regeneration and clean Git diff of generated files.
+
+## What must be independently accepted
+
+- Genuine two-model natural speech conversations with measured accuracy, latency, interruptions and failure recovery.
+- Isolated Asterisk SIP TLS/certificate policy, authenticated OPTIONS, mandatory encrypted media, real INVITE, RTP and confirmed hangup.
+- Operator-verified and provider-enforced hard cutoff, consent, destination allowlisting, fraud controls, and orphan reconciliation.
+- UK PSTN and regulatory review, real commercial billing, x402 settlement accounting and refund policy.
+- Published operations, customer support, telemetry, privacy/retention and incident response.
+
+**Publication of 0.0.1 as research source** is different from **launching a production calling service**. Real telephony remains blocked by all of the above. See [Roadmap](/docs/roadmap.html) and the repository's `QA-REPORT.md`.
+
+
+---
+
+<!-- /docs/peer-contract.html -->
+# Bot-to-bot interoperability and the human mandate
+
+**Status: contract research and runnable local policy prototype. Not a hosted A2A server, MCP endpoint, call provider, or payable service.** The included pure JavaScript module at `lib/peer-contract.mjs` is an executable design exercise, not a production authorisation service.
+
+## Who is the peer?
+
+There are three different peers, and treating them as one is a design error:
+
+1. **Requesting autonomous agent:** an OpenAI, Anthropic, Google, local or bespoke agent acting for a human. It wants a bounded telephony capability exposed by Dial-Tone via tools.
+2. **Dial-Tone calling peer:** a deterministic service that validates a server-held mandate, enforces policy, originates a call through Asterisk and streams media. A model never receives carrier credentials, SIP passwords, a provider signing key, or unrestricted ARI access.
+3. **Answering party:** a human receptionist, an IVR or another AI. The PSTN does not advertise which one answers. We detect answer and audio; we do not infer that the voice is human or that an appointment was confirmed from SIP signalling.
+
+Model providers differ. The interoperable contract belongs to Dial-Tone, not to the language-model provider. We will expose a documented REST control API, MCP tools for compatible hosts, and a separate real-time audio session. A future A2A Agent Card will be published **only after a genuine A2A service exists**. `/agents.json` and `/agents.txt` are project-specific documents, not substitutes for A2A conformance.
+
+## The mandatory human-authorised workflow
+
+The authorisation object is a **mandate**, not an instruction hidden in a prompt. An agent cannot authorise its own spend or silently broaden destinations.
+
+The human authorises a specific purpose, destination, time window, call duration, budget and permitted consequential actions. The production platform must authenticate the human, store or sign the mandate on the server, tie it to tenant and agent identity, expire it, allow revocation and enforce the limits **again at the PBX/SBC**. The lab's `human_approved: true` field demonstrates the expected shape; **it cannot establish that a human actually approved anything**.
+
+A restaurant booking task must carry:
+
+- Restaurant identity and one classified UK geographic destination, with number ownership checked before live calling.
+- Party size, calendar date, arrival-time range, and the customer's consented name.
+- Whether booking itself is authorised or only availability inquiry is authorised.
+- Hard call-duration, retry and spend limits, including an explicit prohibition on deposits and card requests in the initial pilot.
+- An idempotency key generated outside the model to avoid duplicate outbound calls.
+
+The public `contracts/mandate.schema.json` and `contracts/peer-event.schema.json` are **design schemas**, not published live API guarantees.
+
+## Discovery and capability negotiation
+
+Discovery answer must separate `available_now` and `planned`. At present `available_now.public_live_calling=false`, `hosted_mcp_server=false`, `hosted_a2a_agent=false`, `x402_payment=false`. An agent should use the static scenarios to learn the event shape, but must never treat them as a telephone call. A standard A2A discovery document belongs at `/.well-known/agent-card.json` only when an A2A server actually implements the advertised interface. See the [A2A specification](https://github.com/a2aproject/A2A/blob/main/docs/specification.md).
+
+### Planned peer sequence (not implemented on a public endpoint)
+
+```text
+Human -> Requesting agent: "Book a table for two Saturday at 7:30 PM."
+Agent -> Human: confirm missing details and maximum cost
+Human -> Mandate service: approve exact task and limits
+Agent -> Dial-Tone capabilities: check features, destination policy, pricing
+Agent -> Dial-Tone: prepare_call(mandate_id, idempotency_key)
+Dial-Tone -> PBX: verify isolated route, TLS, SRTP and recent SIP readiness
+Dial-Tone -> Agent: priced quote + explicit decision: ready / blocked / uncertain
+Agent -> Payment: obtain payer authorisation (only when x402 is live)
+Dial-Tone -> Asterisk: originate bounded channel
+Asterisk -> Dial-Tone: authoritative ringing / answer / hangup events
+Agent <-> Dial-Tone <-> answering human or bot: real-time audio
+Agent -> Dial-Tone: booking was apparently agreed (attributed observation)
+Asterisk -> Dial-Tone: confirmed channel termination
+Dial-Tone -> Agent -> Human: events + cost + reservation evidence status
+```
+
+The system should minimise ambient authority: time-limited media tickets, event cursors, tight destination classes, no privilege escalation through SIP REFER/302 redirects, and independent provider timeouts. An MCP tool return is not proof that the telephone network completed an action.
+
+## Proposed session events
+
+Every event has a version, `call_id`, `event_id`, monotonic sequence, UTC timestamp, source (`agent`, `platform`, `sip`, `provider`), and verification status. Possible types include `mandate.accepted`, `readiness.sip_options_passed`, `call.requested`, `call.ringing`, `call.answered`, `media.started`, `agent.interrupted`, `call.hangup_requested`, `call.hangup_confirmed`, `usage.finalised`, `outcome.agent_reported`, and `outcome.independently_verified`.
+
+A model may add attributed transcript and interpretation events. It **may not** create provider-verified `call.answered`, `call.hangup_confirmed`, or settlement events. Persist these separately and reject attempts to cross the trust boundary.
+
+## What must never happen
+
+- An agent receives a dial-string that can reach arbitrary premium-rate, emergency or international destinations.
+- A `200 OK` OPTIONS response is presented as proof of PSTN service, working RTP, or a completed reservation.
+- A retry after a timeout creates a second PSTN call or a second payment.
+- The agent says "booked" and the human UI silently upgrades that to "confirmed" without an independent check.
+- A backend failure frees a customer balance while an SBC channel is still active.
+- The platform publishes A2A/x402 claims without passing protocol tests and making the endpoint available.
+
+## Runnable local exercise
+
+```bash
+cd ai
+node examples/restaurant-lab.mjs
+node --test tests/peer-contract.test.mjs
+```
+
+This exercise prints a **synthetic** approval, preflight decision and post-call evidence classification. It does not make a telephone call or book anything.
+
+A [JSON Schema example mandate](/contracts/examples/reservation-example.json) is published for parser tests. **It is expired, fictional and untrusted.** A peer must not replay it as a valid authorisation or call the illustrative number. It exists to show the intended shape, not proof of human approval.
+
+
+---
+
+<!-- /docs/human-journey.html -->
+# For humans: ask an agent to make a call
+
+**Human-facing walkthrough, not a working booking service.** This guide is distinct from the [agent integration contract](/docs/peer-contract.html): it explains what a person should see, approve and receive. The public website does not currently make calls.
+
+## Imagine you say: "Call that restaurant and book me a table."
+
+The requesting agent needs to know which restaurant to call, the party size, preferred date and arrival time, whose name to use, and any restrictions. It should use structured data or ask concise questions, not invent missing details.
+
+**Example mandate:** two people, 17 October 2026, 19:00–20:30, Example Restaurant, a fictional UK test number, maximum two minutes, no deposit, no recording, no second attempt without renewed approval. The example number is illustrative and MUST NOT be dialled.
+
+### 1. Human decides
+
+The UI displays the selected restaurant and telephone number, the exact task, any personal details the agent will share, a maximum permitted cost, and a short list of actions the agent may take. **Book the table** can be authorised; a payment, deposit, cancellation fee, upsell, new date or different venue requires a separate permission. A button press or authorised account action must create a server-verifiable mandate. An LLM-generated JSON flag alone is not permission.
+
+### 2. Agent prepares
+
+The agent discovers Dial-Tone's current capabilities and asks for a priced preflight. The system checks its account permissions, destination class, call concurrency, route, recent SIP OPTIONS, TLS signalling and mandatory encrypted media policy. It returns either ready for a restricted attempt, blocked, or insufficient evidence. **SIP readiness is not a promise that the restaurant will answer.**
+
+### 3. Dial-Tone places the call
+
+Once a real provider connection exists and the human's mandate and payment are verified, Dial-Tone asks Asterisk to originate the bounded channel. The network, not the agent's script, reports ringing, answer and termination. Audio becomes available to the agent through a controlled media gateway. The caller can hear and speak without having SIP credentials.
+
+### 4. Agent speaks normally
+
+A suitable opening would be: "Hello, I'm an automated assistant calling on behalf of a customer. Could I book a table for two for Saturday 17 October, ideally at 7:30 PM?" The model listens, allows the other person to interrupt, repeats a name or number only as authorised, checks the time, asks whether there is a booking reference, and does not provide card details or agree to a deposit. If the business refuses automated calls, the agent ends politely.
+
+The answering party may be a person, an IVR or another voice agent. Calling voice bots should be treated as capable peers but cannot be assumed to support MCP or A2A simply because they answer the phone. DTMF, IVR navigation, hold music, voice activity, and disconnections are first-class telephony outcomes.
+
+### 5. Human sees what actually happened
+
+The result is presented in separate fields: `Call connected` (network event), `Call ended` (provider-confirmed release), `Agent reports a reservation` (agent's interpretation), `Booking reference` (if provided by the restaurant), `Independent confirmation` (if obtained from a trusted booking system or customer verification), and `Total charge` (after verified metering and settlement). **Do not present an agent-reported reservation as independently verified.**
+
+If the restaurant is busy or unreachable, the agent returns that outcome and requests a fresh mandate for another attempt rather than redialling indefinitely. If call termination is uncertain, the service surfaces `needs_reconciliation` until the network confirms release. Recording/transcription policies must be explicit and appropriate to UK privacy law before deployment.
+
+## Human and agent experiences are intentionally different
+
+| Human-facing information | Agent-facing machine contract |
+| --- | --- |
+| Who is being called and why | `mandate_id`, scoped principal and capability |
+| Approval and maximum cost | Server-enforced bounds and idempotency key |
+| Connecting / answered / finished | Sequenced provider events with source and trust |
+| What the restaurant said | Timestamped, attributed observations |
+| Was a table actually booked? | Claim versus independent booking confirmation |
+| Receipt and ability to stop | Usage, settlement reference and kill switch |
+
+## Controls the human must retain
+
+Before live launch: revoke authorisations, cancel a queued call, request hangup, review per-call spend, choose whether any audio/transcript is retained, see error and dispute paths, manage agent credentials and inspect the exact call evidence. The platform must honour abuse reports and a recipient's request not to be called.
+
+**No live call, booking, wallet transaction or invitation to the public beta exists in this preview.** Read the [readiness roadmap](/docs/roadmap.html) for acceptance criteria.
+
+
+---
+
+<!-- /docs/native-security.html -->
+# MicroSIP and Dial-Tone security: source inventory and limitations
+
+**Source review: EgyptianEyes/Dial-Tone, commit `f0d15b3f958b91c20fad05693b74e3902533fc08` (`main` at review), 10 October 2026.** Review scope includes the root README and `extracted/MicroSIP-3.22.3-src/AccountDlg.cpp`, `settings.cpp`, `mainDlg.cpp`, and `global.cpp`. This is a **source-feature inventory**, not a vulnerability audit or live certificate/media verification. The Windows executable was not rebuilt in this documentation pass.
+
+## What the native repository actually contains
+
+Dial-Tone is MicroSIP-derived C++ using PJProject/PJSUA. It retains the SIP account registration and call/media stack. `AccountDlg.cpp` exposes UDP, TCP and TLS transport options and these media policies: Disabled, Optional SRTP (`RTP/AVP`), Mandatory SRTP (`RTP/SAVP`), combined DTLS-SRTP/SRTP, and DTLS-SRTP. `settings.cpp` persists the SRTP setting. `mainDlg.cpp` handles authenticated SIP OPTIONS challenges (`401` and `407`), collects the result, selected transport, source endpoint and elapsed time, and generates pre-call readiness diagnostics.
+
+The native README documents registration, transport, audio device, codec, OPTIONS response and latency tests. `READY` requires suitable local checks, registration, and a successful SIP OPTIONS response. Non-registrar accounts remain `DEGRADED`; RTT above 1,000 ms is degraded. Recent readiness is associated with a subsequent outgoing call for up to 60 seconds. The actual call's answer and RTP still require separate verification.
+
+Read the [source README](https://github.com/EgyptianEyes/Dial-Tone/blob/main/README.md) and [native account security options](https://github.com/EgyptianEyes/Dial-Tone/blob/main/extracted/MicroSIP-3.22.3-src/AccountDlg.cpp).
+
+## What we MUST carry forward, and what cannot be inherited
+
+| Area | Native Dial-Tone | AI/headless/browser requirement |
+| --- | --- | --- |
+| SIP signalling | UDP, TCP, TLS settings | **TLS only** on the controlled PBX hop, with validated peer identity; no silent downgrade |
+| SIP authentication | PJSIP challenge-based SIP credentials | Credentials remain at the PBX side, never in model prompts or browser-exposed backend config |
+| Media encryption | Disabled, Optional SRTP, Mandatory SRTP, DTLS-SRTP choices | **Mandatory** encrypted media on SIP/WebRTC public hops; reject optional, disabled and downgrade outcomes |
+| Browser media | Windows native audio and PJSUA | Browser uses WebRTC DTLS-SRTP, secure WSS signalling, ICE and permissioned microphone; not a native-source port |
+| Remote media gateway | No agent-facing media protocol | TLS-protected, tenant-bound, short-lived media tickets; strict framing, limits and reconciliation |
+| Readiness | Registration, OPTIONS, codecs, devices, response time | Reproduce semantic checkpoints in service; distinguish local SIP reachability from actual carrier connectivity |
+| Trace | Call states, identifiers, codec and RTP statistics | Structured redacted traces; distinguish provider-confirmed events from model-supplied claims |
+| Recording | Native recording capability | Recording disabled by default, explicit retention/legal-basis review and restricted access |
+| Redirects/transfer | Supported in native softphone | Deny unattended REFER, 3xx redirection and transfers to unclassified destinations |
+| Runtime integrity | CI builds unsigned native executable | Pin dependencies, sign release artefacts, rotate secrets, protect supply chain and keep release provenance |
+
+**Important:** PJSIP's **optional** SRTP setting may negotiate unencrypted RTP and must not be accepted by a production AI security profile. For SDES-SRTP, TLS protects key material conveyed in signalling; for DTLS-SRTP, the media handshake derives keys. PJSIP documentation also notes build and backend requirements for DTLS-SRTP: merely showing a configuration option does not prove support in a particular binary. See [PJSIP SRTP guide](https://docs.pjsip.org/en/latest/specific-guides/security/srtp.html) and [MicroSIP media encryption help](https://www.microsip.org/help).
+
+## Readiness truth table
+
+| Evidence | What it demonstrates | What it does not demonstrate |
+| --- | --- | --- |
+| PJSUA account exists, SIP REGISTER accepted | This account can register | Dialplan permits the destination |
+| OPTIONS final 2xx from registrar/target, current TLS transport | SIP endpoint responded recently | PSTN carrier reachable, INVITE accepted |
+| Local sound device and codec present | Endpoint can prepare local media | Remote hearing the agent or bidirectional RTP |
+| Asterisk ARI `StasisStart`/call answered | A channel was originated/answered | Any restaurant booking completed |
+| Media WebSocket frames flowing both ways | Packets cross our gateway | Transcription accurate, recipient hears intelligible speech |
+| Provider's `Hangup` / termination event | Network channel ended | The business confirmed a reservation |
+
+The local contract exercise in `lib/peer-contract.mjs` rejects missing TLS/certificate evidence, disabled/optional SRTP, stale OPTIONS results and unverified route policy. It also marks all observations unauthenticated and `network_call_authorised=false`. It does **not** provide or validate real SIP certificates.
+
+## Asterisk media and trust boundaries
+
+`chan_websocket` is documented for Asterisk 22.6.0+, 21.11.0+, 20.16.0+ and 23.x, with binary audio and text control frames, and `MEDIA_START`, `MEDIA_XOFF`, `MEDIA_XON` signals. Later versions support a JSON control format. Pin the installed version before writing a production adapter, verify codec/frame interpretation, and never connect the ARI/media interface directly to the public Internet. See [Asterisk WebSocket media documentation](https://docs.asterisk.org/Configuration/Channel-Drivers/WebSocket/).
+
+Production hardening is still unverified: test the exact native TLS certificate behaviour and digest algorithms, confirm secure transport in Asterisk, require a valid server certificate and suitable SRTP policy, test ICE/TURN and DTLS-SRTP on browsers, enforce independent call cutoff at the PBX/SBC, prevent redirect bypass, and run external security review.
+
+
+---
+
+<!-- /docs/roadmap.html -->
+# Living roadmap: from test lab to an agent telephone service
+
+**Baseline: 11 October 2026. Target host: `ai.dial-tone.uk`. Current public maturity: technical preview, not live calling.** The roadmap is an acceptance register, not a collection of promised dates. A phase is complete only when its evidence has been recorded against a repeatable test in the repository.
+
+## R0 — Source truth, contracts, safety and human separation
+
+**State: documentation and local policy tests implemented in this release.** Preserve native MicroSIP/PJSUA code and GPL notices, document exactly which TLS/SRTP settings exist, publish a native/web/headless interoperability matrix, and separate human product guidance from machine peer contracts. Keep the standalone public repository separate from the private carrier/payment backend. Add runnable fake reservation mandate, SIP readiness and evidence-classification tests. **Exit:** tests pass, publication archive contains no secrets/private code, and all discovery documents say public PSTN and payment are unavailable.
+
+## R1 — Real isolated SIP/WebRTC laboratory
+
+**State: blocked, no connected PBX.** Provision a dedicated Asterisk instance with *no carrier routes* in the test context. Inspect the exact Asterisk and PJProject versions. Create two isolated extensions, an echo/answer test endpoint, WSS, required TLS certificate verification and DTLS-SRTP. Verify registration, authenticated OPTIONS, SIP response timing, real INVITE/answer, full-duplex speech and independent media statistics. **Exit:** documented test logs and authorised audio from at least two user agents, including one browser/AI bridge, with no route to emergency, premium or chargeable numbers.
+
+## R2 — Full-duplex AI voice, interruption and peer testing
+
+**State: not live-tested.** Integrate two independently chosen model/voice stacks, with explicit audio sample-rate conversion, jitter/backpressure handling, interruption flush, 20 ms packet timing, DTMF/IVR, silence handling, reconnection and bounded retries. Cover human receptionist, IVR and agent-to-agent answers. **Exit:** at least 30 authorised live laboratory conversations across two different model implementations, externally observable start/stop and latency/quality reports. No credit for synthetic WebSocket loops.
+
+## R3 — Mandatory safety and failure recovery
+
+**State: lab contract exists, real carrier integration missing.** Signed and tenant-bound mandates, provider channel correlation, independently enforced per-call hard deadline, provider reconciliation after process death, PBX/SBC destination controls, blocked REFER/redirect bypass, verified caller ID (including valid, dialable CLI that uniquely identifies the caller under applicable Ofcom requirements), a working destination for complaints/abuse reporting where appropriate, observability, redaction and rate/concurrency limits. **Exit:** deliberately kill the agent and API during live lab calls; verify 100/100 provider-confirmed channel closures with zero orphan channels. Verify no duplicate calls on retry and no channel escapes from authorised dialplan.
+
+## R4 — x402 and money correctness
+
+**State: not integrated.** Define quote currency and immutable validity window, convert GBP to exact USDC units on the selected Base network with slippage policy, verify payer approval and settlement before chargeable origination, meter provider-confirmed connected time, and reconcile errors, refunds and missing settlement. **Exit:** test payment success, replay, chain mismatch, underpayment, expiry, duplicate retries, provider no-answer, partial use and restart, with ledger consistency. Never take an AI-generated claim as payment proof.
+
+## R5 — Restricted, authorised UK PSTN pilot
+
+**State: not started.** Only approved customers and classified UK geographic numbers. Validate UK call purposes, CLI presentation and return-dialling behaviour, privacy/AI-disclosure obligations, recording policy, recipient opt-outs and abuse-report handling. No emergency, premium, international, automated marketing campaign, transfer or deposit-taking. **Exit:** controlled real PSTN call suite, carrier logs matched to public call IDs, independent hangup, usage/settlement reconciliation, operator incident drills and no unresolved high-severity findings.
+
+## R6 — Public self-service agent service
+
+**State: not started.** Add real hosted authenticated REST/MCP, machine-discoverable capability manifests and actual A2A Agent Card only if supported; a free real-audio challenge; human permissions/dashboard, history, invoices/receipts, key revocation and status/incident communications. Publish SDKs and precise limits. **Exit:** an unfamiliar external agent, without team assistance, completes a free live test and a fully authorised paid call with correct evidence. No manual SIP configuration by the agent.
+
+## Always-on engineering requirements
+
+- Every feature change updates its reference chapter, machine-readable manifest/contract, error semantics and evidence record in the same pull request.
+- Reject security downgrades rather than trying insecure signalling/media to improve call connection rates.
+- Stamp simulated fixtures, provider facts, model interpretations, settlement and third-party booking confirmations with separate provenance.
+- Only tests executed against the real PBX/SBC count as real SIP/PSTN acceptance evidence.
+- Review licence provenance before moving any GPL-derived source into the closed service; public interface/SDK work is separate from proprietary routing and commerce.
+- Maintain versions for all public schemas and include a deprecation/migration policy before published breaking changes.
+
+## Scope of the first public release
+
+**One runnable development experience, plus a target production journey:** (1) the local, genuinely connected bot-to-bot Peer Lab with operator stop and received-audio evidence; and (2) **future**, restricted human-authorised UK geographic calling with managed x402 prepayment. The second is a design and acceptance target, **not delivered in 0.0.1**. Human cost controls, account-bound approval, recording choices, carrier-confirmed hangup and verified booking outcomes remain future work. Only the local lab has a runnable event journal.
+
+## Evidence register
+
+| Evidence | Current observed result | Blocking next proof |
+| --- | --- | --- |
+| Native repository review | Source inspected; README states not production-ready | Runtime Windows TLS/cert audit |
+| Public Peer Lab 0.0.1 | Authenticated local PCM and voice fixture tests | Real independent speech models and provider control |
+| Agent policy exercise in this edition | Run `node --test tests/peer-contract.test.mjs` | Authenticated/signed server-side mandate |
+| SIP OPTIONS and secure media | Design validated only | Registered account, SIP 2xx with TLS, audio test |
+| Live Asterisk / PSTN | **Zero proven** | Isolated staging PBX and authorised number |
+| Real agent reservation | **Zero proven** | Real conversation, external confirmation |
+| x402 payment | **Zero proven** | Facilitator, chain verification, reconciliation |
+
+**Do not change a phase to “passed” because a documentation page or mock says so.** Record test command, date, backend revision, Asterisk version, provider evidence and pass/fail in a release evidence file.
+
+
+---
+
+<!-- /docs/peer-lab.html -->
+# The First Call: real AI peer laboratory
+
+> **LOCAL NETWORK DEVELOPMENT ONLY. Not live telephony.** This chapter documents source under `peer-lab/` in the independent `kierknoby/AI-Dial-Tone` repository. It does not describe an API running at `ai.dial-tone.uk`.
+
+## Why this exists
+
+The earlier AI Dial-Tone work could describe an autonomous telephone conversation, but did not let two separately authenticated bot processes talk through an independently running service. The **AI Peer Lab** addresses that gap before a real Asterisk channel is introduced.
+
+Two independent AI *clients* connect over WebSockets, using distinct credentials, and exchange actual bidirectional PCM16 frames and text/DTMF/control events. The local backend enforces human-issued scope, single-use admission, monotonic media sequences, and a session deadline. It does **not** place calls, listen to PSTN speech, perform ASR, or claim that a restaurant accepted a reservation.
+
+## Quickstart: run a conversation, not a static fixture
+
+From an extracted public-source package or the `main` branch of the standalone repository:
+
+```bash
+python -m pip install 'aiohttp==3.13.3'
+python tools/verify_first_call.py --out demo-output
+python -m unittest discover -s peer-lab/tests -p 'test_*.py' -v
+```
+
+For actual synthesised speech in `caller_heard.wav` and `peer_heard.wav`, install eSpeak and FFmpeg. Without these tools, the demo uses an audible test tone. The WAV files contain **audio received from the other process over WebSockets**, not a copy of its local TTS buffer.
+
+The separate `verification.json` checks the local proof, both received WAV files and the explicit absence of real-world success claims. The `proof.json` file records both sides of the fictional dialogue, PCM frame counts, the ended-session reason, and the final SHA-256 event-chain digest. The dialogue is scripted, not the output of a hosted LLM. See the complete `peer-lab/README.md` for API examples and precise 656-byte PCM framing.
+
+## What an agent needs to know
+
+- **Discovery:** `GET /v1/capabilities` is a real localhost HTTP endpoint when the Peer Lab server is running. It explicitly declares `real_pstn: false`, `booking_provider: false`, `payment: false`.
+- **Human authority:** only the separately authenticated operator can create a mandate, revoke it, or stop the experiment. The mere presence of `human_approved: true` in model-supplied JSON is never sufficient.
+- **Peer scope:** the caller is bound to a mandate and a named destination AI peer; that peer authenticates with its own credential and joins through its pending inbox.
+- **Call lifecycle:** `awaiting_peers → running → ended`; if the peer never joins, the caller disconnects, or the deadline expires, the server ends the session.
+- **Audio:** binary `DT01` + u32 big-endian sequence + u64 big-endian timestamp + 640 bytes little-endian PCM16, mono at 16 kHz (20 ms). This is **not** an RTP or SIP packet.
+- **Interruption:** `audio.interrupt` and `audio.end` are explicit peer commands, not proof that a model interrupted successfully. A downstream TTS implementation must honour interruption cancellation.
+- **Evidence:** `agent.utterance` and `agent.dtmf` are *asserted by the agents*. The server can establish that the bytes crossed its WebSocket boundary, not that someone understood or acted on them.
+
+## How to connect a model
+
+The reusable model-agnostic Python client in `peer-lab/client.py` exposes `connect()`, `recv()`, `say()`, `pcm()`, `dtmf()`, `interrupt()`, `audio_end()`, and `hangup()`. Your model integration maps its recognised speech to `say`, generated audio to fixed-size PCM frames, and interruption events to TTS cancellation. A production counterpart must authenticate actual humans, configure real SIP/TLS/SRTP, test end-to-end speech latency, and bind carrier-confirmed termination to the call journal.
+
+## A realistic restaurant task
+
+A human tells their assistant: “Book a table for two at 7:30.” In the current Peer Lab, the operator authorises a **fictional** enquiry to a **fictional AI restaurant peer**. Both peers exchange speech samples and task text, but the peer explicitly replies that **no real table was booked**. The result is therefore `real_booking_verified: false`. This is a necessary defence against a model hallucinating success, not a missing cosmetic feature.
+
+An eventual live deployment adds independently tested Asterisk transport, verified UK destination limits, SIP readiness checks, human spending authorisation, live bidirectional ASR/TTS, actual call cutoff, and x402 settlement. Those remain outstanding release gates.
+
+## Human-facing versus agent-facing
+
+Human-facing content explains **what will happen and what was authorised**. Agent-facing material describes **how to exchange messages and prove transport outcomes**. They share the same mandate identity and event record but must never mistake network delivery or model assertions for an independently verified booking.
+
+See [For humans](/docs/human-journey.html), [Native security](/docs/native-security.html), and [Roadmap](/docs/roadmap.html).
+
+## Model-independent chat integration
+
+An additional adapter in `peer-lab/model_adapter.py` can send the receiving AI's asserted text turns to an explicitly configured, OpenAI-compatible **chat completions API**. It rejects model-requested tool calls, oversized output, insecure remote HTTP, and excessive turn budgets. The adapter can optionally return model-generated speech PCM through a separate TTS callback, and cancels pending inference on an `audio.interrupt` event.
+
+The runnable `peer-lab/examples/model_peer.py` loads endpoint, model name, session ID and credentials from environment variables. The `tests/test_model_adapter.py` suite verifies the adapter using a **separate local fake model protocol server**. No real model provider was used by these tests. This particular text adapter consumes the other peer's *declared text*. The separate `peer-lab/voice_peer.py` audio-first runtime uses received PCM, ASR, model inference and TTS; its provider-protocol testing and poor offline recognition accuracy still do **not** qualify as verified natural telephone conversation.
+
+## Machine-readable protocol reference
+
+The static, read-only [Peer Lab OpenAPI 3.1 description](/api/peer-lab-openapi.json) specifies the **localhost-only** authorisation, session, inbox, admission ticket, and stop/revoke endpoints. The WebSocket `x-websocket-admission` extension documents its binary PCM and control framing. A crawler fetching that JSON receives a *description*, not a public bot-call endpoint. The canonical [OpenAPI](/api/openapi.json) is an identical generated copy of this localhost-only Peer Lab contract, **not** an unrelated private backend.
+
+
+---
+
+<!-- /docs/audio-first-voice.html -->
+# Audio-first autonomous conversations
+
+**Status: implemented and tested on loopback only. Not a telephone service.**
+
+AI Dial-Tone now includes `peer-lab/voice_peer.py`: an actual audio-derived bot conversation pipeline rather than a chat agent responding to a peer's claimed transcript.
+
+## The pipeline
+
+```text
+Human operator issues a short-lived local test mandate
+  → independent bot identities connect over WebSocket
+  → PCM16 16 kHz 20 ms frames arrive from the other bot
+  → bounded energy-based segmentation, or explicit audio.end
+  → audio upload to a configured ASR provider, or optional offline PocketSphinx
+  → independently validated transcription (still fallible)
+  → text chat-completion-compatible model endpoint
+  → TTS via configured /audio/speech-compatible endpoint or local eSpeak
+  → paced PCM16 16 kHz 20 ms frames returned through the same WebSocket
+  → deadline, operator stop, event chain, and media-frame evidence
+```
+
+The receiver **does not treat remote `say` messages as transcripts**. They are separate, unverified bot assertions. The runtime transcribes only received audio. When speech begins during an outgoing response, it cancels the response and asks the peer to flush pending playback. Interrupted, partial media is not a completed utterance.
+
+## Reproduce the test without external APIs
+
+From the **standalone repository root**, using Python 3.11+:
+
+```sh
+python -m pip install 'aiohttp==3.13.3'
+cd peer-lab
+python -m unittest discover -s tests -p 'test_*.py' -v
+```
+
+On Debian/Ubuntu, an additional optional offline demonstration requires `espeak`, `ffmpeg`, the PocketSphinx C library and its English acoustic/language models. Once installed:
+
+```sh
+python examples/audio_first_call.py --out audio-proof
+```
+
+The output contains `caller_spoke.wav`, `caller_heard.wav`, and `proof.json`. The generated waveforms really cross a WebSocket, the receiving agent actually attempts speech recognition with PocketSphinx, and a **deterministic local HTTP chat fixture**, not a real LLM, supplies the reply. PocketSphinx's errors are deliberately preserved in the evidence. It is not a reliable production ASR engine.
+
+## Connect a capable speech and reasoning provider
+
+The example `peer-lab/examples/voice_model_peer.py` can use:
+
+- `AIDT_ASR_URL`, `AIDT_ASR_MODEL`, optionally `AIDT_ASR_KEY`: an HTTP service compatible with `POST /audio/transcriptions`, accepting 16 kHz mono WAV and returning `{"text":"..."}`.
+- `AIDT_MODEL_URL`, `AIDT_MODEL_NAME`, optionally `AIDT_MODEL_KEY`: `POST /chat/completions`, accepting standard messages and returning `choices[0].message.content`. Tool calls are not authorised.
+- Optional `AIDT_TTS_URL`, `AIDT_TTS_MODEL`, `AIDT_TTS_VOICE`, `AIDT_TTS_KEY`: `POST /audio/speech` returning WAV. If omitted, local eSpeak is used.
+- `AIDT_PEER_SESSION`, `AIDT_PEER_TOKEN`, and `AIDT_PEER_URL` for an operator-issued, loopback-only test session.
+
+Set `AIDT_EXTERNAL_AUDIO_PROCESSING_APPROVED=YES` **only after explicitly agreeing to upload audio and text to the selected external providers**. All remote endpoints must use HTTPS; redirects are rejected. Do not paste credentials into a model prompt or commit secrets to GitHub. Audio is personal data when it contains identifiable speech, and sharing it with another provider requires appropriate notice and safeguards.
+
+The TTS converter enforces mono, 16 kHz, PCM16 audio; a WAV returned at another rate is *resampled*, never merely relabelled. All utterances, responses, turn counts, provider bodies, and TTS output are bounded, and no model can trigger SIP, PSTN, payments, or reservations through these adapters.
+
+## What this proves and what it does not
+
+| Capability | Evidence | Current status |
+|---|---|---|
+| Actual PCM delivered between independent bot sockets | Local network test | Passed |
+| Incoming media, not peer text, drives ASR | Audio-first integration regression | Passed |
+| ASR, HTTP reasoning fixture, and TTS complete a round trip | Network fixture and offline proof | Passed locally |
+| Barge-in cancels old audio | Concurrent peer audio regression | Passed locally |
+| Human stop interrupts ongoing model speech | Operator revocation regression | Passed locally |
+| Offline speech recognition reliability | eSpeak → PocketSphinx → transcript | **Poor accuracy** |
+| Speech quality across different real hosted LLMs | No credentials / live providers contacted | **Unverified** |
+| Natural conversation with a real business | No live SIP/PSTN | **Unavailable** |
+| Independently confirmed booking and payment | No trusted booking/payment providers | **Unavailable** |
+
+The local event chain is a useful tamper-evidence check *against a retained digest*, not carrier or reservation evidence. **An ASR transcript, regardless of quality, must never be treated as proof of a real-world action.**
+
+## Production requirements not yet met
+
+Real telephony requires PJSIP/Asterisk registration, TLS certificate validation, secure media, OPTIONS readiness, actual INVITE and call-state checks, uninterrupted duplex PCM with echo cancellation, independently enforced hangup, carrier billing, UK telephone/fraud restrictions, and payment settlement. The Windows Dial-Tone application supports its own separate SIP features; this audio lab **does not inherit them merely by sharing the brand**.
+
+
+---
+
+<!-- /docs/byot-asterisk.html -->
+# Bring Your Own Telecoms — Asterisk (experimental)
+
+**New in the pre-publication 0.0.1 source:** the standalone repository now includes an optional, self-hosted Asterisk ARI connector under `byot/`. It is **off by default**, has been tested against a simulated ARI HTTP/WebSocket server and real UDP RTP sockets, and has **not** completed interoperability testing with a live Asterisk/SIP system.
+
+## Who is this for?
+
+A developer who already operates an **isolated Asterisk PBX**, owns a permitted outbound endpoint, and wants to experiment with a model-neutral agent talking through that PBX. It is **not** a public hosted dialling service and not a ready-made SIP trunk account.
+
+An operator provides the destination through a short-lived one-use mandate. A separate agent credential consumes that mandate. The agent connects its WebSocket *before* dialling starts. The connector checks the ARI event connection and configured PJSIP endpoint state, originates on a fixed configured PJSIP trunk, waits for a Stasis answer, creates a mixing bridge and `externalMedia` channel, and forwards audio between RTP L16 and AI Dial-Tone's 16-kHz `DT01` PCM frames.
+
+## Who controls call routing and teardown?
+
+**The telecoms operator retains final authority.** A person's bounded mandate authorises the agent to *request* a call; it does not grant the agent permission to choose a trunk, open a PSTN route or keep the call alive. The PBX/telco independently decides whether origination is permitted, which configured route may carry the call, and whether to refuse or stop it. Destination permissions, CLI, cost controls and route restrictions belong on the operator's infrastructure, not in a model prompt.
+
+The experimental connector uses one preconfigured PJSIP endpoint. It **does not create, edit or remove PBX outbound routes** when a call begins or ends. An operator stop or deadline requests ARI channel hangup, but **ARI channel absence is not proof of carrier release**. The telecoms operator must own an independent, PBX-side hard timeout, active-call reconciliation and orphan-channel cleanup so calls are terminated even if the agent or Python connector fails. **That independent provider-owned teardown is a requirement for production, not a completed 0.0.1 feature.**
+
+## Practical first steps
+
+From the public GitHub checkout, install `aiohttp==3.13.3`, read [`byot/README.md`](https://github.com/kierknoby/AI-Dial-Tone/blob/main/byot/README.md), and run:
+
+```sh
+python -m unittest discover -s byot/tests -p 'test_*.py' -v
+python -m byot.server --check-config
+```
+
+The configuration check requires operator, agent and ARI credentials but **does not contact Asterisk or place a call**. When the isolated PBX is ready, `python -m byot.server` starts the loopback-only server. Origination requires an additional explicit operator setting, `AIDT_ENABLE_LIVE_ORIGINATION=YES`; without it, no outgoing call is permitted.
+
+## Exact capabilities and limits
+
+- **Works in the local synthetic ARI integration suite:** user-scoped mandate, no dial before authenticated agent admission, one-time media ticket, ARI REST plus event WebSocket, outbound PJSIP endpoint, one mixing bridge, external RTP media, bidirectional network PCM, DTMF control, operator stop, best-effort channel deletion, and local terminal status.
+- **Not yet verified on actual Asterisk:** exact live ARI event timing, authentication configuration, endpoint state, `slin16` payload mapping, codec negotiation, SIP OPTIONS, TLS/SRTP, caller ID, NAT, DTMF interop, actual answered audio, RTP jitter, and carrier release.
+- **Not implemented:** inbound routes, independently persisted mandates, human accounts, concurrent PSTN calls, SIP registration as a standalone endpoint, provider billing, x402, or verified real-world booking outcomes.
+- **Important failure:** if the Python runtime or host crashes while a call is active, the process-local deadline will not necessarily hang up that channel. The Asterisk owner must install a PBX-side timeout, network route restrictions and an orphan cleanup mechanism before production use.
+
+The driver deliberately keeps `carrier_release_verified:false` even when ARI reports the channel absent. `media.ready` is emitted after one validated RTP frame, not after proven two-way speech. There is no magical PSTN preflight guarantee.
+
+## Open source and hosted calling
+
+The BYOT connector is GPLv3-or-later alongside the public agent runtime. It uses Asterisk's REST and RTP interfaces; it does **not** redistribute MicroSIP or private hosted-service infrastructure. A future managed calling service could expose the same agent-facing concepts while supplying hosted SBCs, PSTN, payments and human account security separately.
+
+## Operator-only read-only endpoint preflight
+
+The local BYOT service offers `GET /v1/readiness` requiring the operator bearer. It reads the configured fixed PJSIP endpoint state from Asterisk ARI, does not dial or charge, and always reports `network_call_authorised: false`. `ENDPOINT_ONLINE_ROUTE_UNVERIFIED` means exactly that, not a successful SIP OPTIONS or proven PSTN route. See [Pre-call qualification](/docs/pre-call-principle.html).
+
+
+---
+
+<!-- /docs/x402-payment-admission.html -->
+# x402 payment admission and agent-first topology
+
+**0.0.1 status:** an **unhosted**, tested Python x402 v2 payment-admission research library exists at `payments/x402.py`. It emits HTTP `402` challenge data and consumes wire-shaped `PAYMENT-SIGNATURE` payloads. **No merchant endpoint, real facilitator, real USDC transfer, or public x402 payment service exists.** No model may initiate real calls through this component.
+
+## Original product intent
+
+The primary AI Dial-Tone product is **a telephone capability for autonomous AI agents**, not a human-operated softphone. The user gives a bounded instruction, an agent discovers the capability, the network qualifies the route, a price is disclosed and paid through x402 where applicable, the service connects to the human recipient through a secure FreePBX/PJSIP network, and the agent returns evidence of what happened.
+
+The original Windows Dial-Tone/MicroSIP work is **an engineering benchmark**, not a C++ dependency embedded in a webpage. Preserve the important behaviours in their appropriate runtime: PJSIP registration health, SIP OPTIONS challenge handling, TLS certificate validation, SRTP/DTLS-SRTP with no silent downgrade, call trace evidence, codec/media state, network-owned stop, and call history. A successful OPTIONS response **does not** prove that an external number exists or that voice media works. This repository contains **no native MicroSIP files**.
+
+The target transport is browser-compatible **SIP over WSS + WebRTC audio**, or an agent-side headless media adapter, backed by a properly configured SIP/PJSIP gateway to Asterisk/FreePBX. The browser is for **an AI agent's communication surface**, not an application that requires a human to press telephone buttons. The existing browser SIP.js lab is not yet a verified production gateway or a port of native PJSIP.
+
+## Two ways to use the same agent contract
+
+- **Managed calling:** the autonomous agent uses a hosted, model-neutral calling API. After independently verified human consent and preflight, an x402 challenge authorises fixed-price access; real telecom routing and account orchestration remain private and replaceable. The agent never receives a PBX password, SIP identity, trunk details or network topology.
+- **Bring Your Own Telecoms:** a developer installs a public Asterisk adapter against a PBX and trunk they operate themselves. Self-hosting does not require purchasing managed calling. The agent contract, human mandate and independent safety gates remain identical; use of x402 in BYOT is an optional merchant/operator decision, not a mandatory toll.
+
+Both should eventually support agent-to-human and agent-to-agent conversation. A real call is controlled by network-side Asterisk/PJSIP state, never by the model's claim that it dialled or hung up.
+
+## Proposed payable call-admission sequence
+
+1. **Human mandate:** a separately authenticated operator approves a specific destination, fixed maximum duration, and maximum price. No untrusted agent-generated approval suffices.
+2. **Preflight:** the provider checks route policy, registration, signalling TLS/certificate chain, mandatory encrypted media, audio readiness, number category and independently imposed spend caps. A rejected preflight should not charge a user.
+3. **Quote and challenge:** HTTP `402` with the canonical base64 `PAYMENT-REQUIRED` header and x402 v2 `exact` terms. The lab supports Base mainnet or Base Sepolia native USDC addresses, but has no actual settlement endpoint. Prices are integer USDC atomic units; a GBP display requires a separately sourced timestamped FX quote.
+4. **Payment:** the agent (or its authorised wallet service) supplies `PAYMENT-SIGNATURE`. Terms bind the payment to a unique resource. The service rejects altered recipients, assets, network IDs, amounts or time limits.
+5. **Settle, then admit:** because a live call has external effects, the lab uses the x402 v2 `upfront` flow. A trusted facilitator reports durable settlement, then the system creates a **single-use admission**. A permit is not a dial command. Production also needs a transactional ledger and reconciliation for ambiguous payments.
+6. **Originate:** the independent telephony service validates the destination, remaining call budget, route, SIP status and PBX-side watchdog **again** immediately before origination. The model does not select a trunk or dial arbitrary URI targets.
+7. **Converse and conclude:** PCM streams to an ASR/model/TTS or realtime voice agent; separate provider events confirm answer and hangup. Audio and SIP state must not be inferred from text messages.
+8. **Evidence and reconciliation:** report call-state transitions, usage and payment outcome separately. A settled payment does not guarantee a call answered. An agent saying *booked* is never evidence that a reservation was accepted.
+
+## Contract and limitations
+
+The local library provides `operator_approve`, `challenge`, `settle_and_admit`, `redeem`, `operator_revoke`, and `operator_status`. It intentionally **does not** expose a live web service, execute ARI calls, or hold a wallet. The injected facilitator in tests is a fake. Transaction replay checks and permits are currently process-local; production requires a database transaction, trusted payment verification, shared rate limits, settlement-recovery workers and independent safeguards around call starts.
+
+**Upfront exact payment charges a fixed sum** even if the later call cannot connect. Automated refunds are not implemented or promised. The payment decision is only one part of call safety. Legal review of consent, commercial terms, UK automated-calling rules and call recording is required before enabling real customers.
+
+See [`payments/README.md`](https://github.com/kierknoby/AI-Dial-Tone/blob/main/payments/README.md) for the reproducible demonstration and [the x402 v2 specification](https://github.com/x402-foundation/x402/blob/main/specs/x402-specification-v2.md) for the normative wire protocol.
+
+
+---
+
+<!-- /docs/payment-telecom-handoff.html -->
+# Connecting payment admission to a telephone mandate
+
+**Version 0.0.1 · Local experimental integration · NOT LIVE TELEPHONY OR SETTLEMENT.**
+
+The original AI Dial-Tone idea is one controlled sequence: a human directs an agent, the human authorises a bounded call, the managed service accepts an x402 payment when required, the telephony gateway qualifies and starts the call, and the agent receives a truthful outcome. The public components now include a **local proof of a safe handoff**, not that entire live service.
+
+## The real trust boundaries
+
+| Stage | Responsible actor | Evidence / 0.0.1 status |
+| --- | --- | --- |
+| Task and destination | Human / operator | Operator bearer in the lab; not identity or consent verification |
+| Fixed upfront price | x402 gate | HTTP 402 challenge with bound network, asset, amount, recipient and resource |
+| Settlement | Trusted facilitator | Fake facilitator only; **no real USDC transfer** |
+| Single-use permit | Payment gate | Cryptographically random, consumed once; not a telephone call |
+| PBX mandate | Operator-side handoff | Local-only HTTP POST to the BYOT operator API; same destination and maximum seconds |
+| Call admission | Asterisk adapter | Different agent bearer, preconfigured PJSIP endpoint and disabled-by-default origination |
+| Real media / hangup | FreePBX/Asterisk and gateway | Simulated ARI/WebSocket/RTP integration; no certified PBX or carrier release |
+| Task confirmation | Agent / destination | No real reservation verification available |
+
+The model must never hold the operator bearer, PBX password, receiving wallet signing key, or routing configuration. It cannot choose a new destination during the handoff. Payment alone is insufficient to originate.
+
+## What has actually been implemented
+
+`integration/handoff.py` provides `LocalHandoff`. It checks that the Asterisk adapter is the expected experimental `0.0.1` component and that **live origination is explicitly disabled**. It consumes a paid lab permit from `X402Gate`, then issues a separate BYOT mandate with exactly the original destination and maximum duration.
+
+It rejects non-loopback endpoints, credential problems, mismatched mandate replies, expired/replayed permits, and live-origination backends. An ambiguous HTTP outcome after permit consumption becomes **unresolved**: never silently retry or claim a refund. It never creates a call or passes the agent's credentials into the operator side.
+
+This makes the two reference components consistent and testable. It intentionally **does not turn a mock settlement into the right to place a real paid call**. A production gateway will need independently authenticated humans, persistent payment records, verified USDC settlement, reconciliation, a real FreePBX policy engine and a provider-owned hangup watchdog.
+
+## Reproduce the contract integration
+
+Run from the standalone repository root:
+
+```bash
+python -m pip install 'aiohttp==3.13.3'
+python -m unittest discover -s integration/tests -p 'test_*.py' -v
+```
+
+The tests use the real x402 gate, a local BYOT-compatible HTTP fixture, and the actual BYOT HTTP/WebSocket service with a fake ARI. They verify number and duration binding, one-use consumption, concurrent replay prevention, disabled-origination enforcement, rejection of swapped destinations, and safe failure. They are not an on-chain or SIP interoperability test.
+
+## The agent-facing product still needs building
+
+The agent should ultimately receive **one stable discoverable interface**, independent of whether the route is managed or BYOT. Required, separately verifiable stages include human consent, payment, SIP/WSS readiness, audio admission, network-controlled call states, forced termination, and a receipt that differentiates remote confirmation from model inference.
+
+The public proof deliberately leaves these stages separate so no agent can bypass an unfinished gate. See the [BYOT reference](/docs/byot-asterisk.html), [x402 reference](/docs/x402-payment-admission.html), [security review](/docs/native-security.html), and [frequently asked questions](/faqs.html).
+
+
+---
+
+<!-- /docs/faq.html -->
+# Frequently asked questions
+
+AI Dial-Tone 0.0.1 is an open-source technical preview. **No public PSTN calling, real x402 settlement or hosted MCP service is available.**
+
+These answers are generated from the same question catalogue as the website and machine-readable `/api/faqs.json`.
+
+## What it is
+
+Purpose, audience and present availability.
+
+### What exactly is AI Dial-Tone?
+
+An open-source development project for giving autonomous AI agents controlled telephone communication. The current 0.0.1 code contains a local peer-audio runtime, an experimental Asterisk adapter and a separate x402 admission lab. It does not yet provide a public telephone calling service.
+
+Further reading: [/docs/overview.html](/docs/overview.html)
+
+### Who is it for?
+
+AI-agent developers, operators of FreePBX/Asterisk systems, researchers testing voice-agent interactions and, eventually, humans asking their assistants to make calls. The technical interfaces are agent-first; people should see permissions and outcomes rather than SIP settings.
+
+Further reading: [/humans.html](/humans.html)
+
+### Can I ask my AI to book a restaurant today?
+
+Not through a hosted AI Dial-Tone service. The restaurant example is an illustration and the public browser playground is scripted. Real booking requires live telephony, accurate ASR, task reasoning and independent confirmation; those acceptance gates remain open.
+
+Further reading: [/docs/human-journey.html](/docs/human-journey.html)
+
+### Why version 0.0.1?
+
+It is the initial open-source development preview, not a declaration of production readiness. Earlier internal prototypes were not public releases. The tests cover local contracts and simulations, not commercial end-to-end calling.
+
+Further reading: [/status.html](/status.html)
+
+### How is this related to the Windows Dial-Tone softphone?
+
+The independent AI project draws on the original Dial-Tone/MicroSIP fork for lessons in SIP diagnostics, PJSIP readiness, security and call lifecycle. The native Windows source is not included or ported into this repository. A browser-capable equivalent requires separate WebRTC/SIP integration and real interoperability testing.
+
+Further reading: [/docs/native-security.html](/docs/native-security.html)
+
+### Is the website itself the telephone service?
+
+No. The public pages, discovery manifest and interactive playground are static demonstrations and documentation. Running them does not create an account, settle USDC or dial a telephone number.
+
+Further reading: [/status.html](/status.html)
+
+### Can I contribute before it is production-ready?
+
+Yes. The public code, issue tracker, contracts, tests and roadmap are intended for independent contributors. The repository is GPLv3-or-later and requires appropriate disclosures for AI-assisted changes. Do not submit credentials, real call recordings or private customer data.
+
+Further reading: [/docs/roadmap.html](/docs/roadmap.html)
+
+### Who develops AI Dial-Tone?
+
+AI Dial-Tone is developed by Kieran Knowles-Byrne (@kierknoby) in his personal development space and is being prepared as an Egyptian Eyes project (egyptianeyes.com). This is not yet a live Egyptian Eyes telecommunications service or a claim of completed organisational transfer. Kieran is Head of Product at FreePBX UK and develops FreePBX community modules; neither Sangoma nor FreePBX UK endorses this independent preview. General/privacy enquiries: ai@dial-tone.uk. Abuse reports: dial-tone@egyptianeyes.com.
+
+Further reading: [/about.html](/about.html)
+
+### What experience is behind the project?
+
+Its engineering draws on more than a decade of work with SIP, Asterisk and FreePBX through 20tele and FreePBX UK. The original Windows Dial-Tone fork contributed the guiding pre-call readiness and diagnostic principle. Real Asterisk interoperability for the new AI project still has to be verified.
+
+Further reading: [/about.html](/about.html)
+
+## Autonomous agents
+
+Discovery, models, authorisation and the agent API.
+
+### How does an AI agent discover AI Dial-Tone?
+
+The static site exposes agents.json, llms.txt and a full developer reference. These are project-specific information resources, not a registered MCP endpoint, an A2A Agent Card or proof of an available online calling service. The agent must inspect the availability flags before attempting any action.
+
+Further reading: [/agents.html](/agents.html)
+
+### Is there a public MCP tool I can call?
+
+Not in 0.0.1. A hosted MCP or comparable agent-tool interface is on the roadmap. The existing locally runnable HTTP/WebSocket Peer Lab, self-hosted BYOT connector and payment lab have different contracts and security scopes.
+
+Further reading: [/docs/agents.html](/docs/agents.html)
+
+### Can an agent choose its own telephone number or trunk?
+
+No. A human/operator mandate specifies the permitted destination and call duration. The Asterisk connector uses a preconfigured PJSIP endpoint; the agent token cannot select a trunk, dialplan context or arbitrary destination.
+
+Further reading: [/docs/byot-asterisk.html](/docs/byot-asterisk.html)
+
+### Must I use an OpenAI model?
+
+No. The speech and conversation interfaces are designed to accept independently configured model-compatible providers. The local test fixtures do not establish real-model conversation quality or compatibility with every vendor.
+
+Further reading: [/docs/audio-first-voice.html](/docs/audio-first-voice.html)
+
+### Can two AI agents communicate with each other?
+
+Yes, within the local research Peer Lab: separately authenticated clients exchange sequenced PCM audio, DTMF and control events. This is not yet publicly reachable, and their exchanged text is treated as an assertion unless it was actually recognised from audio.
+
+Further reading: [/docs/peer-lab.html](/docs/peer-lab.html)
+
+### Can an agent speak with an ordinary person?
+
+The necessary audio pipeline and an experimental Asterisk external-media bridge exist, but a complete reliable conversation through a real telephone network has not been independently verified. Test only within isolated and authorised environments.
+
+Further reading: [/docs/audio-first-voice.html](/docs/audio-first-voice.html)
+
+### Can it navigate phone menus using DTMF?
+
+The local peer protocol supports attributed DTMF events and the experimental BYOT agent interface exposes DTMF signalling. Reliable IVR navigation on a real PBX, including timing and error cases, remains an acceptance test.
+
+Further reading: [/docs/media.html](/docs/media.html)
+
+### Can I pass SIP passwords to an AI model to make it call?
+
+Do not. Agent prompts and model context are not credential vaults. SIP accounts, wallet signing, ARI credentials, destination policy and termination controls belong in separately authenticated services outside the model.
+
+Further reading: [/trust.html](/trust.html)
+
+## FreePBX and telecoms
+
+PJSIP topology, readiness, media and bridging.
+
+### Is FreePBX the reference topology?
+
+Yes. FreePBX/Asterisk with PJSIP is the design reference for secure registration, routing, call states and media. Alternative telecom providers may implement the public agent-side contracts, but they must meet equivalent security and evidence requirements.
+
+Further reading: [/docs/provider.html](/docs/provider.html)
+
+### Do I need a Windows computer?
+
+No. The native Windows softphone is a separate inspiration, not a runtime dependency. The agent service is intended for headless or web-compatible deployment, with a browser/WebRTC research lab today and production browser-SIP integration still to be verified.
+
+Further reading: [/docs/native-security.html](/docs/native-security.html)
+
+### Does MicroSIP run directly in the browser?
+
+No. The Windows C++ client cannot simply be loaded into a browser. SIP.js/WebRTC or another browser-compatible engine must implement equivalent policy and diagnostics; calling it a MicroSIP port would be misleading without actual ported code.
+
+Further reading: [/docs/native-security.html](/docs/native-security.html)
+
+### Does successful SIP OPTIONS mean a call will work?
+
+No. It can prove a configured SIP endpoint responded within a measured time. It cannot prove route permission, carrier/PSTN reachability, INVITE success, RTP establishment, audio quality or that a reservation was accepted. These need separate evidence.
+
+Further reading: [/docs/readiness.html](/docs/readiness.html)
+
+### Does AI Dial-Tone already establish SIP registration?
+
+The standalone 0.0.1 project does not supply a verified headless SIP REGISTER client connected to FreePBX. The experimental BYOT bridge uses an existing configured Asterisk PJSIP endpoint and queries its ARI state; that is not a replacement for registration, TLS or media inspection.
+
+Further reading: [/docs/byot-asterisk.html](/docs/byot-asterisk.html)
+
+### Will SIP TLS and SRTP be mandatory?
+
+The intended managed reference topology requires verified SIP TLS and mandatory secure media (SRTP/DTLS-SRTP), with no insecure fallback. The existing experimental external-media RTP connector is deliberately restricted to loopback or isolated private networking; it is not an SRTP gateway.
+
+Further reading: [/docs/native-security.html](/docs/native-security.html)
+
+### Can it handle audio interruptions?
+
+The local voice runtime supports interruption and cancellation tests. Proper barge-in, jitter, endpoint latency, held calls and telecom-network media behaviour still require real PBX and model-provider testing.
+
+Further reading: [/docs/audio-first-voice.html](/docs/audio-first-voice.html)
+
+### Will the agent receive access to the PBX dialplan?
+
+No. Operators configure the permitted PJSIP endpoint and route policy. The agent receives a bounded call capability, not general PBX administration or the ability to alter dialplan configuration.
+
+Further reading: [/docs/byot-asterisk.html](/docs/byot-asterisk.html)
+
+### Can you establish a usable call route before bothering a human?
+
+The design aims to check PBX registration, recent SIP response, approved route policy, secure transport and an isolated tone/echo media path before dialling a person. These checks can remove predictable failures, but they cannot guarantee carrier acceptance, remote answer or two-way PSTN audio.
+
+Further reading: [/readiness.html](/readiness.html)
+
+## Bring your own telecoms
+
+Self-hosting with an existing PBX and SIP service.
+
+### Can I bring my own SIP trunk or provider?
+
+That is a first-class design goal. The repository includes an experimental self-hosted Asterisk ARI adapter with WebSocket agent media and RTP bridging. It has passed simulated Asterisk protocol tests, not real Asterisk/PSTN interoperability tests.
+
+Further reading: [/docs/byot-asterisk.html](/docs/byot-asterisk.html)
+
+### Do I need to pay through x402 for my own Asterisk calls?
+
+No. BYOT is an independently deployable path. Operators bring their own PBX and commercial relationship. The experimental x402 gate is a separate reference for the future managed calling option, not a BYOT licensing requirement.
+
+Further reading: [/docs/x402-payment-admission.html](/docs/x402-payment-admission.html)
+
+### Can I point the connector at my production FreePBX?
+
+Not recommended for 0.0.1. Use an isolated test extension with no chargeable, emergency or external routes. Real PBX testing, credential management and a PBX-side watchdog are still outstanding. Live origination remains disabled unless an operator explicitly opts in.
+
+Further reading: [/docs/byot-asterisk.html](/docs/byot-asterisk.html)
+
+### Why use ARI instead of giving the model a SIP account?
+
+ARI allows an independently authenticated call-control service to own origination and bridge lifecycle while the agent receives only media and bounded call controls. Keeping SIP credentials outside the model reduces privilege and helps enforce a server-owned termination path.
+
+Further reading: [/docs/architecture.html](/docs/architecture.html)
+
+### Does the existing BYOT adapter support all PBXs?
+
+No. Its initial backend is Asterisk ARI externalMedia and a configured PJSIP endpoint. Other PBXs need adapters providing equivalent admission, media, state and forced release semantics. No universal SIP-provider compatibility claim is made.
+
+Further reading: [/docs/byot-asterisk.html](/docs/byot-asterisk.html)
+
+### Will the application install FreePBX for me?
+
+No. Self-hosted administrators provision and protect their own FreePBX/Asterisk installation, endpoint, routes, ARI account and media networking. AI Dial-Tone supplies reference integration, not a PBX installer.
+
+Further reading: [/docs/byot-asterisk.html](/docs/byot-asterisk.html)
+
+### How is the experimental paid-permit handoff related to BYOT?
+
+A local-only development coordinator can consume a one-use x402 lab permit and issue an identical destination/duration BYOT mandate. It explicitly refuses BYOT configurations with live origination enabled. It demonstrates contracts connecting, not real payment or chargeable calling.
+
+Further reading: [/docs/payment-telecom-handoff.html](/docs/payment-telecom-handoff.html)
+
+## x402 and payments
+
+Price, settlement, wallet custody and trust boundaries.
+
+### What is x402?
+
+x402 is a payment protocol built around HTTP 402 responses. AI Dial-Tone models an upfront fixed-price challenge and one-use admission as a way for an agent to obtain a calling capability after separately authorised settlement.
+
+Further reading: [/docs/x402-payment-admission.html](/docs/x402-payment-admission.html)
+
+### Can I pay AI Dial-Tone in USDC today?
+
+No. 0.0.1 includes a local x402 v2 protocol fixture but no live facilitator, merchant wallet, production billing account or hosted checkout. No on-chain transfer has been verified by this project.
+
+Further reading: [/docs/x402-payment-admission.html](/docs/x402-payment-admission.html)
+
+### Which network and token are the planned defaults?
+
+The research contract recognises native USDC on Base mainnet and Base Sepolia. Test fixtures use Base Sepolia values, with fabricated transaction results. Actual network availability, merchant accounts and published GBP pricing must be established before launch.
+
+Further reading: [/docs/x402-payment-admission.html](/docs/x402-payment-admission.html)
+
+### Does a payment allow any number to be dialled?
+
+No. Payment is not a calling mandate. It must be bound to a separately authorised purpose, destination, time limit and price, and a fresh SIP/network policy decision must still pass. A paid request can legitimately fail admission.
+
+Further reading: [/docs/x402-payment-admission.html](/docs/x402-payment-admission.html)
+
+### Is pricing per second or fixed upfront?
+
+The current x402 research flow uses a fixed upfront amount and a strict maximum call duration; it does not implement metered per-second settlement or real GBP conversion. Any future variable pricing requires an explicit published contract and separate accounting.
+
+Further reading: [/docs/x402-payment-admission.html](/docs/x402-payment-admission.html)
+
+### What if payment succeeds but the call fails?
+
+That is an unresolved commercial outcome, not proof of a completed service. A real provider needs durable reconciliation, refund/dispute handling and independent call evidence before charging customers. The local lab deliberately does not claim automatic refunds.
+
+Further reading: [/docs/x402-payment-admission.html](/docs/x402-payment-admission.html)
+
+### Does the AI ever hold my wallet keys?
+
+It should not. Wallet signing, settlement proof verification and merchant keys must stay outside the model and beyond any public agent-facing tool. The local payment fixture does not manage wallets or private keys.
+
+Further reading: [/trust.html](/trust.html)
+
+### Why is the local x402 handoff unable to make a real call?
+
+Because a fake settlement fixture must never become a route to chargeable calling. The integrated development handoff refuses an enabled origination backend and returns only a separate local BYOT mandate. Production payment-to-call admission remains future engineering.
+
+Further reading: [/docs/payment-telecom-handoff.html](/docs/payment-telecom-handoff.html)
+
+## Safety and privacy
+
+Human control, legal boundaries and operational limits.
+
+### How does the human approve a call?
+
+The intended service uses authenticated human identity and a server-held, time-limited mandate for a specific task, destination, spending ceiling and duration. Current local prototypes use operator bearer tokens and do not prove actual human identity or consent.
+
+Further reading: [/docs/human-journey.html](/docs/human-journey.html)
+
+### Can the operator stop a call?
+
+The local peer lab has an operator stop. The experimental Asterisk connector can issue ARI hangup and check channel disappearance. That observation is not proof of carrier release, and a watchdog surviving process crashes remains required.
+
+Further reading: [/docs/lifecycle.html](/docs/lifecycle.html)
+
+### What happens if the AI goes offline halfway through?
+
+The local connectors attempt to end sessions on disconnects, errors or deadlines. Production requirements go further: independent PBX-side cutoff, call reconciliation after restarts and never trusting the model to hang up its own call.
+
+Further reading: [/docs/errors.html](/docs/errors.html)
+
+### Can it call emergency, premium-rate or arbitrary international numbers?
+
+The supplied lab policies restrict destinations, with the restaurant-style lab permitting UK geographic numbers only. Emergency, premium, mobile, international and ambiguous routes must remain blocked unless separately designed and legally reviewed; an agent cannot waive policy.
+
+Further reading: [/docs/peer-contract.html](/docs/peer-contract.html)
+
+### Does it record calls by default?
+
+The demonstration can write WAV recordings to local development folders when explicitly run. It does not operate a hosted recording service. Real deployments need consent, retention policy, encryption, regional privacy assessment and clear control over recordings.
+
+Further reading: [/privacy.html](/privacy.html)
+
+### Does an audio transcript prove the person agreed?
+
+No. ASR may be wrong, a model can hallucinate, and an agent can misreport. A stated booking reference is conversation evidence but not independent confirmation. The system must distinguish model claims, recognised speech and provider-confirmed network events.
+
+Further reading: [/docs/events.html](/docs/events.html)
+
+### Can callers use it for marketing or robocalling?
+
+The design is for specifically authorised tasks, not unrestricted bulk calling. Any real deployment must enforce applicable communications, privacy, consent and nuisance-calling rules, with destination and rate restrictions. For UK-originated calling, the network operator must also handle Calling Line Identification correctly: Ofcom’s General Condition C6 guidance requires valid, dialable CLI that uniquely identifies the caller. Providing a routable number with a clear route for complaints or abuse reports is a sensible operating choice, but this preview does not verify CLI policy or supply an abuse-reporting service.
+
+Further reading: [/trust.html](/trust.html)
+
+### Will secrets or internal telecom configuration appear in GitHub?
+
+They must not. The public source contains generic provider interfaces and laboratory configurations, not commercial provisioning credentials, routing databases, ARI secrets or hosted service implementation. Operators must supply their own environment configuration.
+
+Further reading: [/trust.html](/trust.html)
+
+## Calls and outcomes
+
+Reliability, evidence and errors.
+
+### Does a ringing call count as successful?
+
+No. Ringing, answer, bidirectional audio, a completed task and verified customer outcome are different states. The interface must report which transitions were observed and what remains unknown.
+
+Further reading: [/docs/lifecycle.html](/docs/lifecycle.html)
+
+### Can AI Dial-Tone confirm a restaurant booking?
+
+Not independently in 0.0.1. A model can report what it heard, but that is not necessarily an authoritative booking confirmation. A future integration may verify a reservation reference through a recognised provider where available.
+
+Further reading: [/docs/human-journey.html](/docs/human-journey.html)
+
+### What happens when the destination is busy or unreachable?
+
+The intended lifecycle terminates with a machine-readable reason, usage evidence and no invented success. The current simulator includes failure scenarios; the real telecom failure taxonomy and reconciliation still need live Asterisk testing.
+
+Further reading: [/docs/errors.html](/docs/errors.html)
+
+### Can it call another AI instead of a person?
+
+Yes within the local peer test service. A real PSTN-facing bot peer would require the same mandate, identity, audio and network controls as any other destination, plus separate dialogue-quality testing.
+
+Further reading: [/docs/peer-contract.html](/docs/peer-contract.html)
+
+### How do I distinguish local tests from real calls?
+
+Inspect status and evidence flags. The site says technical preview, the OpenAPI points at localhost, the playground says simulated, and the BYOT health endpoint reports whether live origination is enabled. Do not infer a successful call from an event fixture.
+
+Further reading: [/status.html](/status.html)
+
+### Can I make simultaneous calls?
+
+The experimental BYOT service is intentionally single-active-call. Concurrency, fairness, worker isolation and enterprise rate limits are future requirements. The peer lab also has explicit bounded resource limits.
+
+Further reading: [/docs/byot-asterisk.html](/docs/byot-asterisk.html)
+
+## Development and licensing
+
+Running, deploying, contributing and support.
+
+### Where is the source code supposed to live?
+
+The intended standalone repository is kierknoby/AI-Dial-Tone on its main branch. The Windows Egyptian Eyes Dial-Tone repository is separate and should not be modified when developing this AI project.
+
+Further reading: [/docs/overview.html](/docs/overview.html)
+
+### What licence applies?
+
+The new public AI Dial-Tone source is GPLv3-or-later, subject to third-party dependency notices and separate artwork rights. The native MicroSIP code is not shipped in this repository. Commercial hosting infrastructure is not included.
+
+Further reading: [/docs/overview.html](/docs/overview.html)
+
+### Can I use it commercially?
+
+GPLv3 permits commercial use and redistribution under its conditions. It is not a certification of suitability for handling real calls or payments. Operators remain responsible for telecommunications, privacy, security, and any relevant software licence obligations.
+
+Further reading: [/docs/overview.html](/docs/overview.html)
+
+### Is it an official FreePBX, Asterisk or MicroSIP product?
+
+No. AI Dial-Tone is an independent project with a FreePBX/Asterisk reference design. Its upstream inspirations, dependencies, trade names and trademarks belong to their respective owners; interoperability should not be mistaken for endorsement.
+
+Further reading: [/docs/native-security.html](/docs/native-security.html)
+
+### How do I reproduce the tests?
+
+Install the documented Node.js and Python versions, regenerate the site and docs, run npm run check, npm run test:peer, npm run test:byot, npm run test:x402 and npm run test:handoff. The browser lab and optional Chromium smoke checks have their own scripts.
+
+Further reading: [/docs/quickstart.html](/docs/quickstart.html)
+
+### Can I deploy the static site without the backend?
+
+Yes, it is a documentation and preview site. Hosting it does not expose the local Peer Lab, BYOT connector or x402 fixture. Before public deployment, review DNS, content security policy, privacy disclosures, legal notices and accessibility.
+
+Further reading: [/status.html](/status.html)
+
+### How do I report a security issue?
+
+Use the repository security policy rather than publishing credentials or exploit details in an issue. Until a private disclosure channel is explicitly configured, do not assume a monitored security mailbox or service-level agreement exists.
+
+Further reading: [/trust.html](/trust.html)
+
+### How do I know what is finished next?
+
+Use the engineering roadmap and build-status page. A simulated ARI call does not close the real FreePBX interoperability gate, and a mock settlement does not close the live x402 settlement gate. Only independently tested evidence advances those claims.
+
+Further reading: [/roadmap.html](/roadmap.html)
+
+
+---
+
+<!-- /docs/pre-call-principle.html -->
+# Pre-call qualification: can the agent actually make a call?
+
+**Principle:** test everything that can be tested before committing a human to a call. The user should not be interrupted merely to find out whether an AI agent was assigned a broken SIP path. This is the engineering principle carried forward from the original [Dial-Tone Windows softphone](https://github.com/EgyptianEyes/Dial-Tone).
+
+## Provenance: what native Dial-Tone established
+
+The MicroSIP-derived Windows application added a pre-call readiness control, **local audible dial tone** and **Call Trace**. Its published README documents the selected SIP account, registration, transport, sound devices, codecs, authenticated SIP OPTIONS response, endpoint and round-trip latency. The tone is generated **locally** when readiness is acceptable; it is **not** a tone supplied by the carrier or a guarantee that any particular number can be reached. `READY` in the Windows application is not a PSTN completion certificate. A successful qualification can be associated with a subsequent outgoing call within 60 seconds on the same account.
+
+An autonomous agent should receive the same level of evidence as structured, timestamped observations. An optional echo or test-tone path should be **isolated and non-human**, so audio-path tests need not ring an unsuspecting recipient.
+
+## Proposed qualification stages
+
+| Stage | Before a real call? | Evidence required | Scope and limitation |
+| --- | --- | --- | --- |
+| 0. Authenticated mandate | Yes | Server-verifiable human permission, destination class, cost and duration constraints | Approval is not proof of network readiness |
+| 1. SIP endpoint | Yes | PBX-reported PJSIP endpoint presence, registration/qualify status and observation time | An online trunk or endpoint does not prove its dialplan or PSTN path |
+| 2. SIP response | Yes | Recent SIP OPTIONS response bound to the configured account/peer; transport, certificate, round-trip time | OPTIONS 2xx proves that SIP service answered that check, **not** that a particular dialled number can be completed |
+| 3. Security and route policy | Yes | TLS/verified peer, mandatory encrypted media policy, codec and approved routing class | A route-policy decision is not evidence that a carrier will accept a later INVITE |
+| 4. Controlled media loop | When configured | Isolated echo/tone exchange, RTP observations, timing and loss; never a real person's number | Proves only this test media path at this time |
+| 5. Real INVITE and answer | No; this is the attempted call | Asterisk and provider-attributed call state and media observations | Real destination success becomes knowable only during actual call progress |
+| 6. Task and release evidence | After connection | Confirmed hangup, measured usage, independently corroborated task status | A model's statement does not prove booking or release |
+
+**No fully non-dialling preflight can guarantee a future call will complete.** The design goal is to eliminate predictable failures **before** placing the call, and ensure remaining uncertainty is visible. A paid managed route should be qualified before settlement where feasible; the project still needs an explicit failure/refund and settlement policy because pre-payment does not guarantee remote answer.
+
+## Available in version 0.0.1
+
+The public BYOT connector now offers **`GET /v1/readiness`**, an operator-authenticated, **read-only** observation of its fixed configured PJSIP endpoint through Asterisk ARI, when connected. It does not originate, place a test call, issue a mandate, validate the dialplan, or claim to observe SIP OPTIONS directly. An ARI `online` value is only an endpoint-state observation. Its output includes a `not_proven` array and `network_call_authorised: false`. The originator must still separately require an authorised mandate and admission.
+
+Other full-fidelity native readiness checkpoints, authenticated OPTIONS, PBX-specific route inspection, isolated echo diagnostics, audible feedback and provider-certified results **are not implemented in the AI version**. See [Native security](/docs/native-security.html), [BYOT Asterisk](/docs/byot-asterisk.html), and [Release readiness](/docs/readiness.html).
+
+## Acceptance criteria for the real service
+
+1. The probe comes from an authenticated, authoritative PBX/SIP observer, not from client-submitted JSON or a model's claim.
+2. Observations are fresh, bound to the selected trunk/account and route policy, and invalidated on configuration, endpoint, IP or credential changes.
+3. SIP and media security must fail closed on TLS downgrade, certificate mismatch or optional/disabled SRTP when encryption is required.
+4. PBX/carrier routing decisions are recorded without inventing a destination response.
+5. The service exposes a clear distinction between **route candidate**, **internal media verified**, **call connected**, and **remote conversation verified**.
+6. A bot may stop and report the reason before ringing a human. A successful probe alone cannot trigger a billable call.
+7. Real hangup and charging limits must be independently enforced and reconciled at the PBX/carrier boundary.
+
+## Why it matters to AI agents
+
+An autonomous agent cannot sensibly ask a human to troubleshoot SIP or ring a recipient speculatively. It needs **machine-readable confidence and a reason code** before committing to an action. An audible local tone and useful Call Trace were powerful for an administrator; a trustworthy preflight receipt and structured call trace should be their agent-facing equivalents.
+
+
+---
+
+<!-- /docs/origins.html -->
+# Origins, community work and technical provenance
+
+**Developer:** [Kieran Knowles-Byrne (`@kierknoby`)](https://github.com/kierknoby). AI Dial-Tone is an **independent** open-source project, not an official Sangoma, FreePBX, MicroSIP or telecommunications-provider release.
+
+## Project home and current status
+
+AI Dial-Tone is currently being developed in Kieran's personal development space and is being prepared as an [Egyptian Eyes](https://egyptianeyes.com) project. The name also appears on the [separate Egyptian Eyes Windows Dial-Tone codebase](https://github.com/EgyptianEyes/Dial-Tone); the two repositories do not share native application source. The project is not represented as an already transferred business or a live Egyptian Eyes telecom service. General/privacy contact: [ai@dial-tone.uk](mailto:ai@dial-tone.uk); abuse reports: [dial-tone@egyptianeyes.com](mailto:dial-tone@egyptianeyes.com).
+
+## A decade of FreePBX and telephony engineering
+
+[20tele](https://20tele.com/) describes more than a decade working with FreePBX and Asterisk, managed hosting, SIP trunks, numbering, customer support and deployment tooling. [FreePBX UK](https://freepbx.uk/) publicly describes its Official FreePBX partner status for UK hosting and its relationship with 20tele. Kieran is identified there as Head of Product. The differing public historical dates used by those websites are deliberately not repeated here; the defensible statement is **more than a decade of trading and engineering**.
+
+The published projects are concrete examples, not unverifiable claims:
+
+- [Registration Watch](https://github.com/freepbxUK/registrationwatch): signed community module for monitoring PJSIP registration status and alerting.
+- [Repeat Caller](https://github.com/kierknoby/repeatcaller): inbound caller detection, incidents and notifications for FreePBX/PBXact.
+- [Concurrency Count](https://github.com/kierknoby/concurrencycount): live and historical FreePBX/Asterisk call concurrency reporting.
+- [Heqet ISO](https://github.com/20telecom/heqet) and [IN1CLICK](https://github.com/20telecom/IN1CLICK): FreePBX installation and deployment tooling associated with 20tele.
+
+These projects demonstrate experience with operating actual telecom systems, not proof that the experimental AI calling platform is itself production-ready.
+
+## The original Dial-Tone's distinctive contribution
+
+[Dial-Tone](https://github.com/EgyptianEyes/Dial-Tone) is a separate, native Windows MicroSIP-derived softphone. Its central advance for this project is **pre-call readiness**: qualify local PJSIP account and audio prerequisites, receive an authenticated SIP response, play a **locally generated audible dial tone**, and present actionable **Call Trace** observations. The principle is not that a SIP response guarantees a PSTN call; it is that avoidable failure conditions should be discovered **before bothering a person**.
+
+AI Dial-Tone translates that ambition into structured preflight receipts for autonomous agents and a future browser/headless communication interface. No native Windows code is included or asserted to run in the browser. See [Pre-call qualification](/docs/pre-call-principle.html), [Native security](/docs/native-security.html), and the public [Project Overview](/overview.html).
+
+## Public and private boundaries
+
+The project's public code includes experimental model/voice tools, a local peer media lab, an optional self-hosted Asterisk connector and an x402 contract experiment. It does **not** contain or explain any operator's internal service provisioning, charging, carrier interconnect or routing technology. The public code should describe standard security and integration contracts only.
+
+**Trademark and partnership distinction:** any FreePBX UK partner designation belongs to FreePBX UK under its own commercial agreement. AI Dial-Tone does not claim Sangoma endorsement, commercial availability, or a production certification.

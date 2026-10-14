@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#000000"><meta name="color-scheme" content="dark light">
+<title>Living roadmap: from test lab to an agent telephone service | AI Dial-Tone</title><meta name="description" content="Baseline: 11 October 2026. Target host: ai.dial-tone.uk. Current public maturity: technical preview, not live calling. The roadmap is an acceptance register, not a collection of promised dates. A phase is complete only when its evidence has been reco">
+<link rel="canonical" href="https://ai.dial-tone.uk/docs/roadmap.html"><meta property="og:url" content="https://ai.dial-tone.uk/docs/roadmap.html"><meta property="og:type" content="website"><meta property="og:title" content="Living roadmap: from test lab to an agent telephone service | AI Dial-Tone"><meta property="og:description" content="Baseline: 11 October 2026. Target host: ai.dial-tone.uk. Current public maturity: technical preview, not live calling. The roadmap is an acceptance register, not a collection of promised dates. A phase is complete only when its evidence has been reco"><meta property="og:image" content="https://ai.dial-tone.uk/assets/social.svg">
+<link rel="icon" type="image/svg+xml" href="/assets/logo.svg"><link rel="manifest" href="/site.webmanifest"><link rel="alternate" type="text/plain" title="Agents" href="/llms.txt"><link rel="stylesheet" href="/assets/style.css"><link rel="stylesheet" href="/assets/reference.css">
+<script type="module" src="/assets/app.js"></script><script type="module" src="/assets/reference.js"></script>
+</head><body data-palette="blue">
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="topline"><div class="container topline-inner"><span class="status-dot"></span><span>TECHNICAL PREVIEW</span><span class="topline-separator" aria-hidden="true">/</span><span>Live PSTN calling and payments are not enabled</span><a href="/status.html">Development status <span aria-hidden="true">↗</span></a></div></div>
+<header class="site-header"><div class="container nav-inner"><a class="brand" href="/" aria-label="AI Dial-Tone home"><img src="/assets/logo.svg" width="39" height="39" alt=""><span><span class="brand-ai">AI</span> DIAL-<b>TONE</b></span></a><nav class="nav-links" id="primary-nav" aria-label="Main navigation"><a class="nav-link " href="/overview.html" >Overview</a><a class="nav-link " href="/playground.html" >Playground</a><a class="nav-link is-current" href="/docs/index.html" aria-current="page">Developers</a><a class="nav-link " href="/agents.html" >For Agents</a><a class="nav-link " href="/humans.html" >For Humans</a><a class="nav-link " href="/faqs.html" >FAQs</a><a class="nav-link " href="/about.html" >About</a><a class="nav-link " href="/status.html" >Status</a></nav><a class="nav-cta" href="/docs/quickstart.html">Start building <span aria-hidden="true">↗</span></a><button type="button" class="menu-button" aria-expanded="false" aria-controls="primary-nav" aria-label="Open navigation"><span></span><span></span><span></span></button></div></header>
+<main id="main"><section class="ref-section"><div class="ref-layout container"><aside class="ref-sidebar" aria-label="Documentation navigation"><div class="ref-sidebar-inner"><span class="ref-sidebar-eyebrow">DOCUMENTATION / LOCAL LAB</span><a class="ref-home" href="/docs/index.html">← Documentation home</a><nav class="ref-nav"><a href="/docs/overview.html"  class="ref-nav-link ">Start here</a><a href="/docs/quickstart.html"  class="ref-nav-link ">Local quickstart</a><a href="/docs/architecture.html"  class="ref-nav-link ">Architecture</a><a href="/docs/authentication.html"  class="ref-nav-link ">Authentication</a><a href="/docs/api.html"  class="ref-nav-link ">HTTP API</a><a href="/docs/lifecycle.html"  class="ref-nav-link ">Call lifecycle</a><a href="/docs/events.html"  class="ref-nav-link ">Events &amp; evidence</a><a href="/docs/media.html"  class="ref-nav-link ">Media &amp; framing</a><a href="/docs/agents.html"  class="ref-nav-link ">SDKs and MCP</a><a href="/docs/provider.html"  class="ref-nav-link ">Provider integration</a><a href="/docs/errors.html"  class="ref-nav-link ">Errors &amp; recovery</a><a href="/docs/challenge.html"  class="ref-nav-link ">First Call challenge</a><a href="/docs/readiness.html"  class="ref-nav-link ">Release readiness</a><a href="/docs/peer-contract.html"  class="ref-nav-link ">Bot peer contract</a><a href="/docs/human-journey.html"  class="ref-nav-link ">For humans</a><a href="/docs/native-security.html"  class="ref-nav-link ">Native security</a><a href="/docs/roadmap.html" aria-current="page" class="ref-nav-link ref-active">Roadmap</a><a href="/docs/peer-lab.html"  class="ref-nav-link ">First Call Peer Lab</a><a href="/docs/audio-first-voice.html"  class="ref-nav-link ">Audio-first voice</a><a href="/docs/byot-asterisk.html"  class="ref-nav-link ">BYOT: Asterisk</a><a href="/docs/x402-payment-admission.html"  class="ref-nav-link ">x402 payment admission</a><a href="/docs/payment-telecom-handoff.html"  class="ref-nav-link ">x402 to BYOT handoff</a><a href="/docs/faq.html"  class="ref-nav-link ">Frequently asked questions</a><a href="/docs/pre-call-principle.html"  class="ref-nav-link ">Pre-call qualification</a><a href="/docs/origins.html"  class="ref-nav-link ">Origins &amp; community engineering</a></nav><div class="ref-sidebar-note">Preview only. No live PSTN, x402 settlement, or hosted agent API.</div></div></aside><article class="ref-article" id="reference-article"><div class="ref-page-meta"><a href="/docs/index.html">Reference</a><span> / </span><strong>Living roadmap: from test lab to an agent telephone service</strong></div><div class="ref-label"><span class="ref-dot"></span> CONTRACT: LOCAL LAB · NOT LIVE TELEPHONY</div><div class="ref-markdown"><h1 id="living-roadmap-from-test-lab-to-an-agent-telephone-service">Living roadmap: from test lab to an agent telephone service</h1>
+<p><strong>Baseline: 11 October 2026. Target host: <code>ai.dial-tone.uk</code>. Current public maturity: technical preview, not live calling.</strong> The roadmap is an acceptance register, not a collection of promised dates. A phase is complete only when its evidence has been recorded against a repeatable test in the repository.</p>
+<h2 id="r0-source-truth-contracts-safety-and-human-separation">R0 — Source truth, contracts, safety and human separation</h2>
+<p><strong>State: documentation and local policy tests implemented in this release.</strong> Preserve native MicroSIP/PJSUA code and GPL notices, document exactly which TLS/SRTP settings exist, publish a native/web/headless interoperability matrix, and separate human product guidance from machine peer contracts. Keep the standalone public repository separate from the private carrier/payment backend. Add runnable fake reservation mandate, SIP readiness and evidence-classification tests. <strong>Exit:</strong> tests pass, publication archive contains no secrets/private code, and all discovery documents say public PSTN and payment are unavailable.</p>
+<h2 id="r1-real-isolated-sip-webrtc-laboratory">R1 — Real isolated SIP/WebRTC laboratory</h2>
+<p><strong>State: blocked, no connected PBX.</strong> Provision a dedicated Asterisk instance with <em>no carrier routes</em> in the test context. Inspect the exact Asterisk and PJProject versions. Create two isolated extensions, an echo/answer test endpoint, WSS, required TLS certificate verification and DTLS-SRTP. Verify registration, authenticated OPTIONS, SIP response timing, real INVITE/answer, full-duplex speech and independent media statistics. <strong>Exit:</strong> documented test logs and authorised audio from at least two user agents, including one browser/AI bridge, with no route to emergency, premium or chargeable numbers.</p>
+<h2 id="r2-full-duplex-ai-voice-interruption-and-peer-testing">R2 — Full-duplex AI voice, interruption and peer testing</h2>
+<p><strong>State: not live-tested.</strong> Integrate two independently chosen model/voice stacks, with explicit audio sample-rate conversion, jitter/backpressure handling, interruption flush, 20 ms packet timing, DTMF/IVR, silence handling, reconnection and bounded retries. Cover human receptionist, IVR and agent-to-agent answers. <strong>Exit:</strong> at least 30 authorised live laboratory conversations across two different model implementations, externally observable start/stop and latency/quality reports. No credit for synthetic WebSocket loops.</p>
+<h2 id="r3-mandatory-safety-and-failure-recovery">R3 — Mandatory safety and failure recovery</h2>
+<p><strong>State: lab contract exists, real carrier integration missing.</strong> Signed and tenant-bound mandates, provider channel correlation, independently enforced per-call hard deadline, provider reconciliation after process death, PBX/SBC destination controls, blocked REFER/redirect bypass, verified caller ID (including valid, dialable CLI that uniquely identifies the caller under applicable Ofcom requirements), a working destination for complaints/abuse reporting where appropriate, observability, redaction and rate/concurrency limits. <strong>Exit:</strong> deliberately kill the agent and API during live lab calls; verify 100/100 provider-confirmed channel closures with zero orphan channels. Verify no duplicate calls on retry and no channel escapes from authorised dialplan.</p>
+<h2 id="r4-x402-and-money-correctness">R4 — x402 and money correctness</h2>
+<p><strong>State: not integrated.</strong> Define quote currency and immutable validity window, convert GBP to exact USDC units on the selected Base network with slippage policy, verify payer approval and settlement before chargeable origination, meter provider-confirmed connected time, and reconcile errors, refunds and missing settlement. <strong>Exit:</strong> test payment success, replay, chain mismatch, underpayment, expiry, duplicate retries, provider no-answer, partial use and restart, with ledger consistency. Never take an AI-generated claim as payment proof.</p>
+<h2 id="r5-restricted-authorised-uk-pstn-pilot">R5 — Restricted, authorised UK PSTN pilot</h2>
+<p><strong>State: not started.</strong> Only approved customers and classified UK geographic numbers. Validate UK call purposes, CLI presentation and return-dialling behaviour, privacy/AI-disclosure obligations, recording policy, recipient opt-outs and abuse-report handling. No emergency, premium, international, automated marketing campaign, transfer or deposit-taking. <strong>Exit:</strong> controlled real PSTN call suite, carrier logs matched to public call IDs, independent hangup, usage/settlement reconciliation, operator incident drills and no unresolved high-severity findings.</p>
+<h2 id="r6-public-self-service-agent-service">R6 — Public self-service agent service</h2>
+<p><strong>State: not started.</strong> Add real hosted authenticated REST/MCP, machine-discoverable capability manifests and actual A2A Agent Card only if supported; a free real-audio challenge; human permissions/dashboard, history, invoices/receipts, key revocation and status/incident communications. Publish SDKs and precise limits. <strong>Exit:</strong> an unfamiliar external agent, without team assistance, completes a free live test and a fully authorised paid call with correct evidence. No manual SIP configuration by the agent.</p>
+<h2 id="always-on-engineering-requirements">Always-on engineering requirements</h2>
+<ul>
+<li>Every feature change updates its reference chapter, machine-readable manifest/contract, error semantics and evidence record in the same pull request.</li>
+<li>Reject security downgrades rather than trying insecure signalling/media to improve call connection rates.</li>
+<li>Stamp simulated fixtures, provider facts, model interpretations, settlement and third-party booking confirmations with separate provenance.</li>
+<li>Only tests executed against the real PBX/SBC count as real SIP/PSTN acceptance evidence.</li>
+<li>Review licence provenance before moving any GPL-derived source into the closed service; public interface/SDK work is separate from proprietary routing and commerce.</li>
+<li>Maintain versions for all public schemas and include a deprecation/migration policy before published breaking changes.</li>
+</ul>
+<h2 id="scope-of-the-first-public-release">Scope of the first public release</h2>
+<p><strong>One runnable development experience, plus a target production journey:</strong> (1) the local, genuinely connected bot-to-bot Peer Lab with operator stop and received-audio evidence; and (2) <strong>future</strong>, restricted human-authorised UK geographic calling with managed x402 prepayment. The second is a design and acceptance target, <strong>not delivered in 0.0.1</strong>. Human cost controls, account-bound approval, recording choices, carrier-confirmed hangup and verified booking outcomes remain future work. Only the local lab has a runnable event journal.</p>
+<h2 id="evidence-register">Evidence register</h2>
+<table>
+<thead>
+<tr>
+<th>Evidence</th>
+<th>Current observed result</th>
+<th>Blocking next proof</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Native repository review</td>
+<td>Source inspected; README states not production-ready</td>
+<td>Runtime Windows TLS/cert audit</td>
+</tr>
+<tr>
+<td>Public Peer Lab 0.0.1</td>
+<td>Authenticated local PCM and voice fixture tests</td>
+<td>Real independent speech models and provider control</td>
+</tr>
+<tr>
+<td>Agent policy exercise in this edition</td>
+<td>Run <code>node --test tests/peer-contract.test.mjs</code></td>
+<td>Authenticated/signed server-side mandate</td>
+</tr>
+<tr>
+<td>SIP OPTIONS and secure media</td>
+<td>Design validated only</td>
+<td>Registered account, SIP 2xx with TLS, audio test</td>
+</tr>
+<tr>
+<td>Live Asterisk / PSTN</td>
+<td><strong>Zero proven</strong></td>
+<td>Isolated staging PBX and authorised number</td>
+</tr>
+<tr>
+<td>Real agent reservation</td>
+<td><strong>Zero proven</strong></td>
+<td>Real conversation, external confirmation</td>
+</tr>
+<tr>
+<td>x402 payment</td>
+<td><strong>Zero proven</strong></td>
+<td>Facilitator, chain verification, reconciliation</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Do not change a phase to “passed” because a documentation page or mock says so.</strong> Record test command, date, backend revision, Asterisk version, provider evidence and pass/fail in a release evidence file.</p>
+</div><nav class="ref-pager" aria-label="Documentation pages"><a href="/docs/native-security.html">← MicroSIP and Dial-Tone security: source inventory and limitations</a><a href="/docs/peer-lab.html">The First Call: real AI peer laboratory →</a></nav></article><aside class="ref-aside" aria-label="On this page"><span class="ref-sidebar-eyebrow">ON THIS PAGE</span><nav><a class="ref-toc-link " href="#r0-source-truth-contracts-safety-and-human-separation">R0 — Source truth, contracts, safety and human separation</a><a class="ref-toc-link " href="#r1-real-isolated-sip-webrtc-laboratory">R1 — Real isolated SIP/WebRTC laboratory</a><a class="ref-toc-link " href="#r2-full-duplex-ai-voice-interruption-and-peer-testing">R2 — Full-duplex AI voice, interruption and peer testing</a><a class="ref-toc-link " href="#r3-mandatory-safety-and-failure-recovery">R3 — Mandatory safety and failure recovery</a><a class="ref-toc-link " href="#r4-x402-and-money-correctness">R4 — x402 and money correctness</a><a class="ref-toc-link " href="#r5-restricted-authorised-uk-pstn-pilot">R5 — Restricted, authorised UK PSTN pilot</a><a class="ref-toc-link " href="#r6-public-self-service-agent-service">R6 — Public self-service agent service</a><a class="ref-toc-link " href="#always-on-engineering-requirements">Always-on engineering requirements</a><a class="ref-toc-link " href="#scope-of-the-first-public-release">Scope of the first public release</a><a class="ref-toc-link " href="#evidence-register">Evidence register</a></nav><a class="ref-download" href="/llms-full.txt">Full agent-readable guide ↗</a></aside></div></section></main>
+<footer class="site-footer"><div class="container"><div class="footer-top"><div><a class="brand brand-footer" href="/"><img src="/assets/logo.svg" width="36" height="36" alt=""><span><span class="brand-ai">AI</span> DIAL-<b>TONE</b></span></a><p>An end-to-end telephone capability for autonomous agents, with open-source developer integrations. Developed by Kieran Knowles-Byrne (@kierknoby), drawing on more than a decade of FreePBX and Asterisk engineering. Developed in a personal workspace and being prepared as an <a href="https://egyptianeyes.com" target="_blank" rel="noopener noreferrer">Egyptian Eyes</a> project.</p></div><div><h3>Explore</h3><a href="/overview.html">Project Overview</a><a href="/readiness.html">SIP readiness and diagnostics</a><a href="/about.html">The people behind it</a><a href="/playground.html">Playground</a><a href="/docs/index.html">Developer reference</a><a href="/agents.html">For autonomous agents</a><a href="/humans.html">For humans</a><a href="/faqs.html">FAQs</a><a href="/roadmap.html">Engineering roadmap</a><a href="/trust.html">Trust &amp; safety</a><a href="/status.html">Build status</a><a href="/privacy.html">Privacy notice</a></div><div><h3>For developers</h3><a href="/api/openapi.json">OpenAPI specification</a><a href="/agents.json">Machine-readable capabilities</a><a href="/docs/quickstart.html">Quickstart</a><a href="/docs/byot-asterisk.html">Bring Your Own Telecoms</a><a href="/docs/media.html">Media protocol</a><a href="https://github.com/kierknoby/AI-Dial-Tone" target="_blank" rel="noopener noreferrer">AI Dial-Tone source on GitHub ↗</a></div></div><div class="footer-bottom"><span>© 2026 AI Dial-Tone contributors</span><span>Engineering assisted by GPT-6 · No model-provider endorsement implied.</span><span>Preview only: live telephone calls and payments are not available.</span><a href="#main">Back to top ↑</a></div></div></footer>
+<div class="toast" role="status" aria-live="polite" data-toast></div>
+</body></html>
