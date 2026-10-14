@@ -1,0 +1,25 @@
+# Local Python and Node outputs (not public source)
+__pycache__/
+*.py[cod]
+node_modules/
+.pytest_cache/
+
+# Screenshots and proofs created by optional browser/voice tests
+tests/*.png
+**/demo-output/
+**/proof-output/
+*.wav
+
+# Local credentials, databases, logs, and staging
+.env
+.env.*
+!.env.example
+*.sqlite
+*.sqlite3
+*.db
+*.log
+site-deploy/
+
+# Standalone release staging
+*.zip
+.DS_Store
