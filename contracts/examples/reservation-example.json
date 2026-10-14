@@ -1,0 +1,24 @@
+{
+  "version":"dialtone.peer.task.v1",
+  "mandate_id":"EXAMPLE_NOT_AN_AUTHORIZATION_0001",
+  "human_principal":"demo-human",
+  "agent_id":"demo-reservation-bot",
+  "issued_at":"2026-10-10T18:59:00Z",
+  "expires_at":"2026-10-10T19:20:00Z",
+  "human_approved":true,
+  "task":{
+    "kind":"restaurant_reservation",
+    "restaurant_name":"Example Restaurant (fictional)",
+    "destination":"+442079460123",
+    "party_size":2,
+    "date":"2026-10-17",
+    "earliest":"19:00",
+    "latest":"20:30",
+    "customer_name":"Example Guest",
+    "instructions":"Ask for a quiet table.",
+    "book_authorised":true,
+    "deposit_authorised":false,
+    "recording_authorised":false
+  },
+  "limits":{"max_call_seconds":120,"max_total_gbp_pence":100,"max_attempts":1}
+}

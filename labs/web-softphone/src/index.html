@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Dial-Tone Browser SIP Lab · Development Playground</title><link rel="stylesheet" href="/style.css"></head>
+<body><main>
+<header><div><p class="eyebrow">KIERKNOBY · AI DIAL-TONE · DEVELOPMENT ONLY</p><h1>AI Dial-Tone <span>Browser SIP Lab</span></h1><p>A browser telephone and opt-in bot-media playground. Not for production or PSTN calling.</p></div><strong id="status">DISCONNECTED</strong></header>
+<section class="cols">
+ <div class="panel"><h2>01 · Dedicated SIP test account</h2>
+ <label>Asterisk secure WebSocket endpoint<input id="wss" placeholder="wss://pbx.example.com:8089/ws" autocomplete="off"></label>
+ <label>SIP address<input id="aor" placeholder="sip:1001@example.com" autocomplete="off"></label>
+ <label>SIP username<input id="user" autocomplete="username"></label>
+ <label>Password<input id="password" type="password" autocomplete="current-password"></label>
+ <p class="hint">Use only an isolated Asterisk lab extension. No external or chargeable dialplan routes.</p>
+ <div class="actions"><button id="connect">Connect and register</button><button id="disconnect" class="secondary">Disconnect</button></div></div>
+ <div class="panel"><h2>02 · Test call</h2><label>Allowlisted local extension<input id="number" inputmode="numeric" placeholder="1002"></label>
+ <div class="dialgrid" id="dialgrid"></div>
+ <div class="actions"><button id="call">Call extension</button><button id="answer" class="secondary">Answer</button><button id="hangup" class="danger">Hang up</button></div>
+ <p class="hint">Call requests are restricted to locally approved extensions; a 60-second browser timer requests hangup. The PBX must enforce its own independent cutoff.</p>
+ <audio id="remote" controls autoplay></audio></div>
+</section>
+<section class="cols">
+ <div class="panel"><h2>03 · Operator authority</h2>
+ <label>Permitted local test extensions (comma separated)<input id="allowlist" value="1002" placeholder="1002,1003"></label>
+ <label class="check"><input id="arm" type="checkbox"> Arm bot and manual test calls</label>
+ <label class="check"><input id="approveaudio" type="checkbox"> Permit bot audio for connected test calls</label>
+ <button id="apply" class="secondary">Apply permissions</button>
+ <p class="hint">Active grants: <span id="approved">Not applied</span></p>
+ <p class="hint">These are client-side safety checks, not a PBX authorisation boundary.</p></div>
+ <div class="panel"><h2>04 · Authenticated bot controller</h2>
+ <p class="hint">Mutual HMAC authentication over WSS. Never send your pairing secret inside the hello message. Pairing does not give a bot your SIP password.</p>
+ <label>Controller WSS endpoint<input id="agenturl" placeholder="wss://localhost:8766/" autocomplete="off"></label>
+ <label>Random one-time secret (32+ characters)<input id="agenttoken" type="password" autocomplete="off"></label>
+ <div class="actions"><button id="agentconnect">Pair controller</button><button id="agentdisconnect" class="secondary">Unpair</button></div>
+ <p>Bot connection: <strong id="agentstate">OFFLINE</strong></p></div>
+</section>
+<section class="cols">
+ <div class="panel"><h2>05 · Bot voice transport</h2><p>Telephone audio → bot → telephone audio, PCM16 mono, 16 kHz, 20-ms frames.</p>
+ <div class="actions"><button id="activateaudio">Activate bot audio</button><button id="stopaudio" class="secondary">Stop bot audio</button></div>
+ <p>Audio pipeline: <strong id="audiostate">OFF</strong></p>
+ <p class="hint">Requires operator approval, a paired bot, and an answered call. Bot must also send audio.enable. This replaces the outgoing microphone track until stopped. Bluetooth, Safari, and SIP.js peer-connection access require real-device testing.</p>
+ </div>
+ <div class="panel"><h2>06 · Readiness</h2><button id="check" class="secondary">Check microphone and SIP state</button><pre id="ready">Not checked</pre>
+ <p class="hint">Registration and local microphone readiness do not prove SIP OPTIONS response, ICE connectivity, PSTN reachability, or speech quality.</p></div>
+</section>
+<section class="panel"><h2>07 · Event and call trace</h2><div class="actions"><button id="copy" class="secondary">Copy trace</button><button id="clear" class="secondary">Clear</button></div><pre id="trace" aria-live="polite"></pre></section>
+<footer>This browser SIP experiment is separate from any future private calling backend; no public calling service is operating. No x402, identity assurance, billing, production bot service, or PSTN entitlement here. Browser testing only.</footer>
+</main><script type="module" src="/app.js"></script></body></html>
