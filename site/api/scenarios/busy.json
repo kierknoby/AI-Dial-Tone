@@ -1,0 +1,54 @@
+{
+  "schema_version": "0.0.1",
+  "scenario": "busy",
+  "type": "static_scripted_fixture",
+  "task": "Inspect a simulated busy response. Do not claim a conversation occurred.",
+  "safety_note": "do not interpret busy as answered",
+  "evidence_is_live": false,
+  "telephone_call_placed": false,
+  "events": [
+    {
+      "id": "fixture-busy",
+      "seq": 1,
+      "type": "call.created",
+      "state": "dialling",
+      "detail": "Illustrative call request",
+      "source": "browser_script",
+      "network_verified": false,
+      "trust": "illustrative_only",
+      "payment": null,
+      "at": "1970-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "fixture-busy",
+      "seq": 2,
+      "type": "call.ringing",
+      "state": "ringing",
+      "detail": "Simulated ringing",
+      "source": "browser_script",
+      "network_verified": false,
+      "trust": "illustrative_only",
+      "payment": null,
+      "at": "1970-01-01T00:00:00.550Z"
+    },
+    {
+      "id": "fixture-busy",
+      "seq": 3,
+      "type": "call.failed",
+      "state": "failed",
+      "detail": "BUSY · synthetic failure",
+      "source": "browser_script",
+      "network_verified": false,
+      "trust": "illustrative_only",
+      "payment": null,
+      "at": "1970-01-01T00:00:01.100Z"
+    }
+  ],
+  "checks": {
+    "terminal_state": "failed",
+    "network_verified": false,
+    "payment": null,
+    "source": "browser_script",
+    "sequence_is_contiguous": true
+  }
+}

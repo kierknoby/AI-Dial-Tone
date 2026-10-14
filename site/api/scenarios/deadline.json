@@ -1,0 +1,78 @@
+{
+  "schema_version": "0.0.1",
+  "scenario": "deadline",
+  "type": "static_scripted_fixture",
+  "task": "Inspect a synthetic deadline and explain why real carrier termination still needs confirmation.",
+  "safety_note": "synthetic terminal state is not carrier verified",
+  "evidence_is_live": false,
+  "telephone_call_placed": false,
+  "events": [
+    {
+      "id": "fixture-deadline",
+      "seq": 1,
+      "type": "call.created",
+      "state": "dialling",
+      "detail": "Illustrative call request",
+      "source": "browser_script",
+      "network_verified": false,
+      "trust": "illustrative_only",
+      "payment": null,
+      "at": "1970-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "fixture-deadline",
+      "seq": 2,
+      "type": "call.ringing",
+      "state": "ringing",
+      "detail": "Simulated ringing",
+      "source": "browser_script",
+      "network_verified": false,
+      "trust": "illustrative_only",
+      "payment": null,
+      "at": "1970-01-01T00:00:00.550Z"
+    },
+    {
+      "id": "fixture-deadline",
+      "seq": 3,
+      "type": "call.answered",
+      "state": "answered",
+      "detail": "Simulated answer",
+      "source": "browser_script",
+      "network_verified": false,
+      "trust": "illustrative_only",
+      "payment": null,
+      "at": "1970-01-01T00:00:01.100Z"
+    },
+    {
+      "id": "fixture-deadline",
+      "seq": 4,
+      "type": "call.ending",
+      "state": "ending",
+      "detail": "DEADLINE_EXCEEDED · synthetic watchdog",
+      "source": "browser_script",
+      "network_verified": false,
+      "trust": "illustrative_only",
+      "payment": null,
+      "at": "1970-01-01T00:00:01.650Z"
+    },
+    {
+      "id": "fixture-deadline",
+      "seq": 5,
+      "type": "call.ended",
+      "state": "ended",
+      "detail": "Illustrative closure; a real carrier must independently confirm this",
+      "source": "browser_script",
+      "network_verified": false,
+      "trust": "illustrative_only",
+      "payment": null,
+      "at": "1970-01-01T00:00:02.200Z"
+    }
+  ],
+  "checks": {
+    "terminal_state": "ended",
+    "network_verified": false,
+    "payment": null,
+    "source": "browser_script",
+    "sequence_is_contiguous": true
+  }
+}

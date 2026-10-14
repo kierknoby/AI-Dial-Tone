@@ -1,0 +1,78 @@
+{
+  "schema_version": "0.0.1",
+  "scenario": "remote_hangup",
+  "type": "static_scripted_fixture",
+  "task": "Detect synthetic remote hangup and stop any further conversation work.",
+  "safety_note": "do not invent call completion success",
+  "evidence_is_live": false,
+  "telephone_call_placed": false,
+  "events": [
+    {
+      "id": "fixture-remote_hangup",
+      "seq": 1,
+      "type": "call.created",
+      "state": "dialling",
+      "detail": "Illustrative call request",
+      "source": "browser_script",
+      "network_verified": false,
+      "trust": "illustrative_only",
+      "payment": null,
+      "at": "1970-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "fixture-remote_hangup",
+      "seq": 2,
+      "type": "call.ringing",
+      "state": "ringing",
+      "detail": "Simulated ringing",
+      "source": "browser_script",
+      "network_verified": false,
+      "trust": "illustrative_only",
+      "payment": null,
+      "at": "1970-01-01T00:00:00.550Z"
+    },
+    {
+      "id": "fixture-remote_hangup",
+      "seq": 3,
+      "type": "call.answered",
+      "state": "answered",
+      "detail": "Simulated answer",
+      "source": "browser_script",
+      "network_verified": false,
+      "trust": "illustrative_only",
+      "payment": null,
+      "at": "1970-01-01T00:00:01.100Z"
+    },
+    {
+      "id": "fixture-remote_hangup",
+      "seq": 4,
+      "type": "agent.observation",
+      "state": "answered",
+      "detail": "Illustrative conversation interrupted by remote party",
+      "source": "browser_script",
+      "network_verified": false,
+      "trust": "agent_reported_unverified",
+      "payment": null,
+      "at": "1970-01-01T00:00:01.650Z"
+    },
+    {
+      "id": "fixture-remote_hangup",
+      "seq": 5,
+      "type": "call.ended",
+      "state": "ended",
+      "detail": "REMOTE_HANGUP · synthetic termination",
+      "source": "browser_script",
+      "network_verified": false,
+      "trust": "illustrative_only",
+      "payment": null,
+      "at": "1970-01-01T00:00:02.200Z"
+    }
+  ],
+  "checks": {
+    "terminal_state": "ended",
+    "network_verified": false,
+    "payment": null,
+    "source": "browser_script",
+    "sequence_is_contiguous": true
+  }
+}

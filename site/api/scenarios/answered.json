@@ -1,0 +1,114 @@
+{
+  "schema_version": "0.0.1",
+  "scenario": "answered",
+  "type": "static_scripted_fixture",
+  "task": "Inspect a simulated answered call. Separate reported outcomes from network observations.",
+  "safety_note": "agent-reported outcome is not independent evidence",
+  "evidence_is_live": false,
+  "telephone_call_placed": false,
+  "events": [
+    {
+      "id": "fixture-answered",
+      "seq": 1,
+      "type": "call.created",
+      "state": "dialling",
+      "detail": "Idempotent request accepted by the illustrative simulator",
+      "source": "browser_script",
+      "network_verified": false,
+      "trust": "illustrative_only",
+      "payment": null,
+      "at": "1970-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "fixture-answered",
+      "seq": 2,
+      "type": "call.ringing",
+      "state": "ringing",
+      "detail": "Simulated remote ringing",
+      "source": "browser_script",
+      "network_verified": false,
+      "trust": "illustrative_only",
+      "payment": null,
+      "at": "1970-01-01T00:00:00.550Z"
+    },
+    {
+      "id": "fixture-answered",
+      "seq": 3,
+      "type": "call.answered",
+      "state": "answered",
+      "detail": "Synthetic answer event; no carrier observed",
+      "source": "browser_script",
+      "network_verified": false,
+      "trust": "illustrative_only",
+      "payment": null,
+      "at": "1970-01-01T00:00:01.100Z"
+    },
+    {
+      "id": "fixture-answered",
+      "seq": 4,
+      "type": "media.ready",
+      "state": "answered",
+      "detail": "Example full-duplex audio state; no sound transmitted",
+      "source": "browser_script",
+      "network_verified": false,
+      "trust": "illustrative_only",
+      "payment": null,
+      "at": "1970-01-01T00:00:01.650Z"
+    },
+    {
+      "id": "fixture-answered",
+      "seq": 5,
+      "type": "agent.observation",
+      "state": "answered",
+      "detail": "Scripted illustration only. The task was not executed by an AI.",
+      "source": "browser_script",
+      "network_verified": false,
+      "trust": "agent_reported_unverified",
+      "payment": null,
+      "at": "1970-01-01T00:00:02.200Z"
+    },
+    {
+      "id": "fixture-answered",
+      "seq": 6,
+      "type": "call.ending",
+      "state": "ending",
+      "detail": "Simulated agent termination request",
+      "source": "browser_script",
+      "network_verified": false,
+      "trust": "illustrative_only",
+      "payment": null,
+      "at": "1970-01-01T00:00:02.750Z"
+    },
+    {
+      "id": "fixture-answered",
+      "seq": 7,
+      "type": "call.ended",
+      "state": "ended",
+      "detail": "Simulated terminal state, not network-confirmed",
+      "source": "browser_script",
+      "network_verified": false,
+      "trust": "illustrative_only",
+      "payment": null,
+      "at": "1970-01-01T00:00:03.300Z"
+    },
+    {
+      "id": "fixture-answered",
+      "seq": 8,
+      "type": "agent.outcome",
+      "state": "ended",
+      "detail": "Unverified illustrative outcome; no real-world task completed",
+      "source": "browser_script",
+      "network_verified": false,
+      "trust": "agent_reported_unverified",
+      "payment": null,
+      "at": "1970-01-01T00:00:03.850Z"
+    }
+  ],
+  "checks": {
+    "terminal_state": "ended",
+    "network_verified": false,
+    "payment": null,
+    "source": "browser_script",
+    "sequence_is_contiguous": true
+  }
+}

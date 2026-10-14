@@ -1,0 +1,42 @@
+{
+  "schema_version": "0.0.1",
+  "kind": "static_evaluation_fixtures",
+  "status": "technical_preview",
+  "execution": "static_only",
+  "calling_available": false,
+  "charges": false,
+  "required_registration": false,
+  "notice": "These fixtures are illustrative; no AI, Asterisk, PSTN, or x402 interaction occurred.",
+  "cases": [
+    {
+      "id": "answered",
+      "description": "Inspect a simulated answered call. Separate reported outcomes from network observations.",
+      "fixture": "/api/scenarios/answered.json",
+      "expected_terminal_state": "ended"
+    },
+    {
+      "id": "busy",
+      "description": "Inspect a simulated busy response. Do not claim a conversation occurred.",
+      "fixture": "/api/scenarios/busy.json",
+      "expected_terminal_state": "failed"
+    },
+    {
+      "id": "no_answer",
+      "description": "Inspect simulated ringing followed by no answer. Do not invent spoken information.",
+      "fixture": "/api/scenarios/no_answer.json",
+      "expected_terminal_state": "failed"
+    },
+    {
+      "id": "remote_hangup",
+      "description": "Detect synthetic remote hangup and stop any further conversation work.",
+      "fixture": "/api/scenarios/remote_hangup.json",
+      "expected_terminal_state": "ended"
+    },
+    {
+      "id": "deadline",
+      "description": "Inspect a synthetic deadline and explain why real carrier termination still needs confirmation.",
+      "fixture": "/api/scenarios/deadline.json",
+      "expected_terminal_state": "ended"
+    }
+  ]
+}

@@ -1,0 +1,233 @@
+{
+  "schema_version": "0.0.1",
+  "release_version": "0.0.1",
+  "title": "AI Dial-Tone 0.0.1 public-source developer reference",
+  "documented_backend": "public-local-peer-lab",
+  "public_hosted_api": false,
+  "environment": "localhost Peer Lab; separate experimental BYOT Asterisk ARI adapter",
+  "base_url": "http://127.0.0.1:8765",
+  "live_pstn": false,
+  "self_hosted_experimental_byot": true,
+  "byot_local_spec": "/api/byot-openapi.json",
+  "x402_lab_local_only": true,
+  "real_x402_facilitator": false,
+  "operator_side_payment_to_byot_lab_handoff": true,
+  "handoff_requires_origination_disabled": true,
+  "byot_interoperability_tested_on_real_asterisk": false,
+  "local_handoff_never_enables_live_origination": true,
+  "local_handoff_is_not_a_hosted_api": true,
+  "x402_settlement": false,
+  "hosted_mcp": false,
+  "documentation_root": "/docs/index.html",
+  "llm_full_reference": "/llms-full.txt",
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/v1/capabilities",
+      "auth": "none",
+      "meaning": "Local capability discovery; real_pstn=false"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/mandates",
+      "auth": "operator",
+      "meaning": "Issue local, bounded test mandate"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/mandates/{mid}/revoke",
+      "auth": "operator",
+      "meaning": "Revoke mandate and end its session"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions",
+      "auth": "caller + Idempotency-Key",
+      "meaning": "Create lab session exactly once"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/peers/inbox",
+      "auth": "peer",
+      "meaning": "Assigned pending sessions only"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions/{sid}",
+      "auth": "caller or peer",
+      "meaning": "Read own session journal"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions/{sid}/stop",
+      "auth": "operator",
+      "meaning": "Independent local operator stop"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions/{sid}/tickets",
+      "auth": "assigned caller or peer",
+      "meaning": "Issue single-use WebSocket admission"
+    },
+    {
+      "method": "GET WebSocket",
+      "path": "/v1/sessions/{sid}/connect",
+      "auth": "single-use ticket",
+      "meaning": "WebSocket audio and control; ticket in first message"
+    }
+  ],
+  "call_states": [],
+  "session_states": [
+    "awaiting_peers",
+    "running",
+    "ended"
+  ],
+  "agent_trust_label": "MODEL_ASSERTION_NOT_ASR_VERIFIED",
+  "media": {
+    "frame_magic": "DT01",
+    "bytes_per_frame": 656,
+    "header_bytes": 16,
+    "sample_bytes": 640,
+    "sample_rate_hz": 16000,
+    "channels": 1,
+    "duration_ms": 20,
+    "ticket_ttl_seconds": 20,
+    "browser_header_gateway_implemented": false
+  },
+  "docs": [
+    {
+      "path": "/docs/overview.html",
+      "title": "Overview",
+      "summary": "AI Dial-Tone 0.0.1 is an open-source agent communications development project. It is not a hosted telephone platform or a booking service. No public API exists at ai.dial-tone.uk for originating calls, and the domain currently represents a planned st"
+    },
+    {
+      "path": "/docs/quickstart.html",
+      "title": "Quickstart: first local AI peer session",
+      "summary": "This is a reproducible public-source example. It runs entirely on the developer's computer, uses fictional actors and does not dial a telephone number. You do not need a private laboratory package."
+    },
+    {
+      "path": "/docs/architecture.html",
+      "title": "Architecture",
+      "summary": "AI Dial-Tone 0.0.1 separates trusted operator control, two untrusted bot peers, and media/events over localhost. This does not yet connect to a carrier or a PBX."
+    },
+    {
+      "path": "/docs/authentication.html",
+      "title": "Authentication and permissions",
+      "summary": "The runnable Peer Lab uses three distinct bearer authorities. These are local test credentials, not real customer identities or legally sufficient human consent."
+    },
+    {
+      "path": "/docs/api.html",
+      "title": "HTTP API: runnable local Peer Lab",
+      "summary": "Source: peer-lab/peer_lab.py. Base URL: http://127.0.0.1:8765. This is a local development service, not https://ai.dial-tone.uk/v1/ and not a SIP-call API."
+    },
+    {
+      "path": "/docs/lifecycle.html",
+      "title": "Session lifecycle and termination",
+      "summary": "The current Peer Lab has three session states: awaiting_peers, running, and ended. These are local session states, not SIP dialog states."
+    },
+    {
+      "path": "/docs/events.html",
+      "title": "Events, evidence, and truthful outcomes",
+      "summary": "The server keeps a bounded local event list with a monotonically increasing sequence and a SHA-256 hash chain. Each event identifies the peer role or system; accepted text is explicitly tagged as an unverified model assertion."
+    },
+    {
+      "path": "/docs/media.html",
+      "title": "Real-time media and framing",
+      "summary": "The current Peer Lab transports actual PCM bytes between two independent localhost clients over WebSocket. It does not generate or receive SIP RTP and has no verified PSTN audio."
+    },
+    {
+      "path": "/docs/agents.html",
+      "title": "Agent integration, SDKs, and MCP status",
+      "summary": "AI Dial-Tone is designed for model-neutral agents. In 0.0.1 there is a Python client in peer-lab/client.py, protocol experiments in labs/web-softphone/, and a generic chat-compatible model adapter in peer-lab/model_adapter.py."
+    },
+    {
+      "path": "/docs/provider.html",
+      "title": "Provider and Asterisk integration boundary",
+      "summary": "The 0.0.1 repository now contains a disabled-by-default Asterisk ARI connector in byot/, tested against a synthetic ARI server and network UDP. This is a local reference implementation, not a verified or deployed SIP/PSTN integration; real Asterisk i"
+    },
+    {
+      "path": "/docs/errors.html",
+      "title": "Errors and recovery rules",
+      "summary": "Most Peer Lab REST errors return an HTTP error status and { \"error\": \"UPPERCASE_CODE\" }. WebSocket protocol errors are similarly explicit. Do not convert an error into a reported booking success."
+    },
+    {
+      "path": "/docs/challenge.html",
+      "title": "First Call challenge (synthetic)",
+      "summary": "This repository offers two deliberately different exercises. Neither contacts a telephone carrier or makes a booking."
+    },
+    {
+      "path": "/docs/readiness.html",
+      "title": "Release readiness and validation gates",
+      "summary": "Version 0.0.1: local-only technical preview. The existence of tests, a static site or a hash-chained session receipt does not prove a live phone service. Current evidence is entirely local and fixture-based."
+    },
+    {
+      "path": "/docs/peer-contract.html",
+      "title": "Bot-to-bot interoperability and the human mandate",
+      "summary": "Status: contract research and runnable local policy prototype. Not a hosted A2A server, MCP endpoint, call provider, or payable service. The included pure JavaScript module at lib/peer-contract.mjs is an executable design exercise, not a production a"
+    },
+    {
+      "path": "/docs/human-journey.html",
+      "title": "For humans: ask an agent to make a call",
+      "summary": "Human-facing walkthrough, not a working booking service. This guide is distinct from the agent integration contract: it explains what a person should see, approve and receive. The public website does not currently make calls."
+    },
+    {
+      "path": "/docs/native-security.html",
+      "title": "MicroSIP and Dial-Tone security: source inventory and limitations",
+      "summary": "Source review: EgyptianEyes/Dial-Tone, commit f0d15b3f958b91c20fad05693b74e3902533fc08 (main at review), 10 October 2026. Review scope includes the root README and extracted/MicroSIP-3.22.3-src/AccountDlg.cpp, settings.cpp, mainDlg.cpp, and global.cp"
+    },
+    {
+      "path": "/docs/roadmap.html",
+      "title": "Living roadmap: from test lab to an agent telephone service",
+      "summary": "Baseline: 11 October 2026. Target host: ai.dial-tone.uk. Current public maturity: technical preview, not live calling. The roadmap is an acceptance register, not a collection of promised dates. A phase is complete only when its evidence has been reco"
+    },
+    {
+      "path": "/docs/peer-lab.html",
+      "title": "The First Call: real AI peer laboratory",
+      "summary": "The earlier AI Dial-Tone work could describe an autonomous telephone conversation, but did not let two separately authenticated bot processes talk through an independently running service. The AI Peer Lab addresses that gap before a real Asterisk cha"
+    },
+    {
+      "path": "/docs/audio-first-voice.html",
+      "title": "Audio-first autonomous conversations",
+      "summary": "Status: implemented and tested on loopback only. Not a telephone service."
+    },
+    {
+      "path": "/docs/byot-asterisk.html",
+      "title": "Bring Your Own Telecoms — Asterisk (experimental)",
+      "summary": "New in the pre-publication 0.0.1 source: the standalone repository now includes an optional, self-hosted Asterisk ARI connector under byot/. It is off by default, has been tested against a simulated ARI HTTP/WebSocket server and real UDP RTP sockets,"
+    },
+    {
+      "path": "/docs/x402-payment-admission.html",
+      "title": "x402 payment admission and agent-first topology",
+      "summary": "0.0.1 status: an unhosted, tested Python x402 v2 payment-admission research library exists at payments/x402.py. It emits HTTP 402 challenge data and consumes wire-shaped PAYMENT-SIGNATURE payloads. No merchant endpoint, real facilitator, real USDC tr"
+    },
+    {
+      "path": "/docs/payment-telecom-handoff.html",
+      "title": "Connecting payment admission to a telephone mandate",
+      "summary": "Version 0.0.1 · Local experimental integration · NOT LIVE TELEPHONY OR SETTLEMENT."
+    },
+    {
+      "path": "/docs/faq.html",
+      "title": "Frequently asked questions",
+      "summary": "AI Dial-Tone 0.0.1 is an open-source technical preview. No public PSTN calling, real x402 settlement or hosted MCP service is available."
+    },
+    {
+      "path": "/docs/pre-call-principle.html",
+      "title": "Pre-call qualification: can the agent actually make a call?",
+      "summary": "Principle: test everything that can be tested before committing a human to a call. The user should not be interrupted merely to find out whether an AI agent was assigned a broken SIP path. This is the engineering principle carried forward from the or"
+    },
+    {
+      "path": "/docs/origins.html",
+      "title": "Origins, community work and technical provenance",
+      "summary": "Developer: Kieran Knowles-Byrne (@kierknoby). AI Dial-Tone is an independent open-source project, not an official Sangoma, FreePBX, MicroSIP or telecommunications-provider release."
+    }
+  ],
+  "limitations": [
+    "local_development_only",
+    "no_public_runtime",
+    "no_verified_real_pstn",
+    "no_live_x402_settlement",
+    "no_real_llm_quality_verification",
+    "no_verified_asterisk_originations",
+    "byot_default_no_live_origination"
+  ]
+}

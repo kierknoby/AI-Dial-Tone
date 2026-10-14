@@ -1,0 +1,26 @@
+.faq-status{display:flex;flex-wrap:wrap;align-items:center;gap:1rem;padding:1.15rem 1.35rem;border:1px solid #dedede;border-radius:10px;background:#dedede;margin-bottom:4rem;font-size:.9rem}
+.faq-status strong{font-size:.86rem;letter-spacing:.02em}.faq-status span{flex:1;min-width:16rem}.faq-status a{font-weight:700;text-decoration:underline}
+.faq-tools{display:flex;justify-content:space-between;align-items:end;gap:2rem;margin-bottom:2rem}.faq-tools h2{margin:0}.faq-filter{display:flex;flex-direction:column;gap:.4rem;width:min(100%,28rem)}
+.faq-filter label{font-weight:700;font-size:.86rem}.faq-filter input{font:inherit;color:#000000;width:100%;min-height:3.1rem;border:1px solid #dedede;border-radius:6px;padding:.7rem .9rem;background:white}
+.faq-filter input:focus-visible{outline:3px solid #000000;outline-offset:2px}.faq-filter button{align-self:flex-end;border:0;background:none;cursor:pointer;text-decoration:underline;color:#000000;font:inherit;font-size:.84rem;padding:.35rem}
+.faq-category-nav{display:flex;flex-wrap:wrap;gap:.6rem;margin-bottom:2rem}.faq-category-nav a{text-decoration:none;border:1px solid #dedede;border-radius:100px;padding:.5rem .86rem;font-weight:700;font-size:.85rem;color:#000000;background:#ffffff}.faq-category-nav a:hover,.faq-category-nav a:focus-visible{border-color:#000000;background:#dedede}.faq-category-nav span{font-weight:400;color:#000000;margin-left:.4rem}
+.faq-toolbar{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:2rem;color:#000000;font-size:.9rem}.faq-toolbar p{margin:0}.faq-toolbar div{display:flex;gap:.4rem}.faq-toolbar button{background:transparent;border:1px solid #dedede;border-radius:5px;padding:.45rem .68rem;cursor:pointer;font:inherit;color:#000000}.faq-toolbar button:hover{background:white}
+.faq-category{scroll-margin-top:7rem;margin:0 0 3rem}.faq-category-heading{border-top:2px solid #000000;padding:1.2rem 0 .9rem;display:flex;align-items:baseline;justify-content:space-between;gap:1.5rem}.faq-category-heading h3{font-size:clamp(1.45rem,2.5vw,2rem);margin:0}.faq-category-heading p{margin:0;max-width:32rem;color:#000000;font-size:.95rem}
+.faq-item{background:white;border:1px solid #dedede;border-bottom:0}.faq-item:last-child{border-bottom:1px solid #dedede}.faq-item:first-child{border-radius:8px 8px 0 0}.faq-item:last-child{border-radius:0 0 8px 8px}.faq-item[open]{border-color:#dedede;background:#ffffff}.faq-item summary{display:flex;align-items:center;justify-content:space-between;gap:1rem;cursor:pointer;list-style:none;padding:1.2rem 1.4rem;font-weight:700;color:#000000;line-height:1.45}.faq-item summary::-webkit-details-marker{display:none}.faq-item summary:focus-visible{outline:3px solid #000000;outline-offset:-4px}.faq-chevron{color:#000000;font-size:1.6rem;font-weight:400;line-height:1;flex-shrink:0}.faq-item[open] .faq-chevron{transform:rotate(45deg)}.faq-answer{padding:0 1.4rem 1.45rem;max-width:60rem;color:#000000;line-height:1.75}.faq-answer p{margin:0 0 .8rem}.faq-answer a{font-size:.87rem;color:#000000;font-weight:700;text-decoration:underline}
+.faq-empty{border:1px dashed #dedede;padding:2rem}.faq-contact{background:#dedede;border-radius:12px;padding:2rem;margin:3rem 0 1rem}.faq-contact h2{margin-top:0}.faq-contact p{max-width:45rem}.faq-contact .button{margin:.5rem .5rem 0 0}.faq-item[hidden],.faq-category[hidden],.faq-empty[hidden]{display:none!important}
+@media(max-width:740px){.faq-status{margin-bottom:2rem}.faq-tools{flex-direction:column;align-items:stretch;gap:1rem}.faq-filter{width:100%}.faq-toolbar{align-items:start;flex-direction:column}.faq-category-heading{flex-direction:column;gap:.4rem}.faq-category-heading p{max-width:none}.faq-item summary{padding:1rem}.faq-answer{padding:0 1rem 1.2rem}.faq-category-nav a{font-size:.8rem}.faq-contact{padding:1.3rem}}
+
+/* One accent per page; no mixed blue and gold. */
+.faq-status{background:#dedede;border-color:var(--accent)}
+.faq-filter input:focus-visible,.faq-item summary:focus-visible{outline-color:var(--accent)}
+.faq-category-nav a:hover,.faq-category-nav a:focus-visible{border-color:var(--accent);background:#dedede}
+.faq-item[open]{border-color:var(--accent);background:#ffffff}
+.faq-chevron{color:#000000}
+.faq-answer a{color:#000000;text-decoration-color:var(--accent)}
+.faq-contact{background:#dedede}
+
+/* Strict light-mode FAQ contrast; colour is only used as the current page accent. */
+.faq-status,.faq-contact{background:#dedede;color:#000000;border-color:var(--accent)}
+.faq-answer,.faq-answer a,.faq-category-heading p,.faq-category-nav span,.faq-toolbar{color:#000000}
+.faq-answer a{text-decoration-color:var(--accent)}
+.faq-item[open],.faq-filter input:focus-visible,.faq-item summary:focus-visible{border-color:var(--accent);outline-color:var(--accent)}

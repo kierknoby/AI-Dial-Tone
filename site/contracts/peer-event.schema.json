@@ -1,0 +1,20 @@
+{
+ "$schema":"https://json-schema.org/draft/2020-12/schema",
+ "$id":"https://ai.dial-tone.uk/contracts/peer-event.schema.json",
+ "title":"AI Dial-Tone peer event — proposed, not hosted",
+ "description":"Trust-aware contract proposal. Platform must assign sequence and signature/provenance; agents cannot self-certify network facts.",
+ "x-dialtone-status":"design_only_not_hosted",
+ "type":"object","additionalProperties":false,
+ "required":["version","call_id","event_id","seq","at","source","type","verification","detail"],
+ "properties":{
+  "version":{"const":"dialtone.peer.event.v1"},
+  "call_id":{"type":"string","format":"uuid"},
+  "event_id":{"type":"string","format":"uuid"},
+  "seq":{"type":"integer","minimum":1},
+  "at":{"type":"string","format":"date-time"},
+  "source":{"enum":["agent","platform","sip","provider","counterparty"]},
+  "type":{"type":"string","minLength":3,"maxLength":64,"pattern":"^[a-z][a-z0-9_.]+$"},
+  "verification":{"enum":["agent_reported_unverified","platform_recorded","provider_observed","independently_verified"]},
+  "detail":{"type":"object"}
+ }
+}

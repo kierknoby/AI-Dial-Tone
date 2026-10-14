@@ -1,0 +1,458 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AI Dial-Tone LOCAL Peer Lab",
+    "version": "0.0.1",
+    "description": "Runnable local-only AI peer control plane. NO SIP, PSTN, booking, x402 or hosted service. This specification is not served by ai.dial-tone.uk as an operational API."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8765",
+      "description": "Local development server only. Never publish this debug service."
+    }
+  ],
+  "security": [
+    {
+      "BearerToken": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Distinct operator, caller, and peer credentials. Never place tokens in a prompt."
+      }
+    },
+    "schemas": {
+      "MandateRequest": {
+        "type": "object",
+        "required": [
+          "caller_id",
+          "peer_id",
+          "task",
+          "max_seconds"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "caller_id": {
+            "type": "string"
+          },
+          "peer_id": {
+            "type": "string"
+          },
+          "task": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "max_seconds": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 120
+          }
+        }
+      },
+      "SessionRequest": {
+        "type": "object",
+        "required": [
+          "mandate_id"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "mandate_id": {
+            "type": "string"
+          }
+        }
+      },
+      "Admission": {
+        "type": "object",
+        "required": [
+          "type",
+          "ticket"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "const": "admit"
+          },
+          "ticket": {
+            "type": "string"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/v1/capabilities": {
+      "get": {
+        "summary": "Describe local peer support and explicitly no PSTN",
+        "description": "Role: none. LOCAL LAB ONLY.",
+        "responses": {
+          "200": {
+            "description": "Local control response"
+          },
+          "400": {
+            "description": "Rejected request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Bad credentials"
+          },
+          "404": {
+            "description": "No access to session"
+          }
+        },
+        "x-required-role": "none",
+        "security": []
+      }
+    },
+    "/v1/mandates": {
+      "post": {
+        "summary": "Human/operator issues single-use local mandate",
+        "description": "Role: operator. LOCAL LAB ONLY.",
+        "responses": {
+          "200": {
+            "description": "Local control response"
+          },
+          "400": {
+            "description": "Rejected request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Bad credentials"
+          },
+          "404": {
+            "description": "No access to session"
+          }
+        },
+        "x-required-role": "operator",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MandateRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/mandates/{mid}/revoke": {
+      "post": {
+        "summary": "Human/operator revokes mandate and stops attached session",
+        "description": "Role: operator. LOCAL LAB ONLY.",
+        "responses": {
+          "200": {
+            "description": "Local control response"
+          },
+          "400": {
+            "description": "Rejected request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Bad credentials"
+          },
+          "404": {
+            "description": "No access to session"
+          }
+        },
+        "x-required-role": "operator",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/sessions": {
+      "post": {
+        "summary": "Caller starts one mandated peer session; Idempotency-Key header mandatory",
+        "description": "Role: caller. LOCAL LAB ONLY.",
+        "responses": {
+          "200": {
+            "description": "Local control response"
+          },
+          "400": {
+            "description": "Rejected request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Bad credentials"
+          },
+          "404": {
+            "description": "No access to session"
+          }
+        },
+        "x-required-role": "caller",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 12,
+              "maxLength": 128
+            }
+          }
+        ]
+      }
+    },
+    "/v1/peers/inbox": {
+      "get": {
+        "summary": "List only sessions assigned to the authenticated peer",
+        "description": "Role: peer. LOCAL LAB ONLY.",
+        "responses": {
+          "200": {
+            "description": "Local control response"
+          },
+          "400": {
+            "description": "Rejected request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Bad credentials"
+          },
+          "404": {
+            "description": "No access to session"
+          }
+        },
+        "x-required-role": "peer"
+      }
+    },
+    "/v1/sessions/{sid}": {
+      "get": {
+        "summary": "Read only own scoped events and current state",
+        "description": "Role: caller or peer. LOCAL LAB ONLY.",
+        "responses": {
+          "200": {
+            "description": "Local control response"
+          },
+          "400": {
+            "description": "Rejected request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Bad credentials"
+          },
+          "404": {
+            "description": "No access to session"
+          }
+        },
+        "x-required-role": "caller or peer",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/sessions/{sid}/stop": {
+      "post": {
+        "summary": "Human/operator terminates local session",
+        "description": "Role: operator. LOCAL LAB ONLY.",
+        "responses": {
+          "200": {
+            "description": "Local control response"
+          },
+          "400": {
+            "description": "Rejected request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Bad credentials"
+          },
+          "404": {
+            "description": "No access to session"
+          }
+        },
+        "x-required-role": "operator",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/sessions/{sid}/tickets": {
+      "post": {
+        "summary": "Issue one use ticket for own role, expires in 20 seconds",
+        "description": "Role: caller or peer. LOCAL LAB ONLY.",
+        "responses": {
+          "200": {
+            "description": "Local control response"
+          },
+          "400": {
+            "description": "Rejected request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Bad credentials"
+          },
+          "404": {
+            "description": "No access to session"
+          }
+        },
+        "x-required-role": "caller or peer",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/sessions/{sid}/connect": {
+      "get": {
+        "summary": "WebSocket upgrade; ticket in first JSON frame within 4 seconds",
+        "description": "Role: caller or peer via admission ticket. LOCAL LAB ONLY.",
+        "responses": {
+          "200": {
+            "description": "Local control response"
+          },
+          "400": {
+            "description": "Rejected request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Bad credentials"
+          },
+          "404": {
+            "description": "No access to session"
+          }
+        },
+        "x-required-role": "caller or peer via admission ticket",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "x-websocket-admission": {
+          "first_frame": {
+            "$ref": "#/components/schemas/Admission"
+          },
+          "single_use_ticket": true,
+          "pcm_format": "DT01 656 bytes",
+          "frame_size": 656,
+          "text_events": [
+            "say",
+            "dtmf",
+            "audio.end",
+            "audio.interrupt",
+            "hangup",
+            "ping"
+          ]
+        },
+        "security": []
+      }
+    }
+  },
+  "x-operational-boundaries": {
+    "public_hosted": false,
+    "telephone_routing": false,
+    "x402": false,
+    "independently_verified_booking": false,
+    "real_speech_recognition": false,
+    "ws_binary_media": "DT01 (4) + uint32be sequence (4) + uint64be timestamp (8) + mono 16kHz PCM16LE (640)"
+  }
+}

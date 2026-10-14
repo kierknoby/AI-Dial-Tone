@@ -1,0 +1,274 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AI Dial-Tone experimental self-hosted Asterisk BYOT connector",
+    "version": "0.0.1",
+    "description": "LOCAL LOOPBACK ONLY. Live origination disabled by default. Tested with simulated ARI and UDP, NOT real Asterisk. Operator mandates do not constitute verified human identity. No public hosted API. WebSocket media requires one-time ticket in first message, DT01 PCM frames. The server is not suitable for production or public exposure."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8877",
+      "description": "Experimental loopback-only self-hosted connector (not publicly hosted)"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Local runtime status, not readiness guarantee",
+        "responses": {
+          "200": {
+            "description": "Disabled or enabled locally; does not verify carrier"
+          }
+        }
+      }
+    },
+    "/v1/mandates": {
+      "post": {
+        "summary": "Operator issues one-use destination and duration mandate",
+        "security": [
+          {
+            "operatorBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "destination",
+                  "max_seconds"
+                ],
+                "properties": {
+                  "destination": {
+                    "type": "string",
+                    "pattern": "^\\+44[12][0-9]{9}$"
+                  },
+                  "max_seconds": {
+                    "type": "integer",
+                    "minimum": 10,
+                    "maximum": 120
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Mandate issued with 120 s expiry"
+          },
+          "401": {
+            "description": "Invalid operator credential"
+          },
+          "400": {
+            "description": "Invalid target or duration"
+          }
+        }
+      }
+    },
+    "/v1/mandates/{mandate_id}/revoke": {
+      "post": {
+        "summary": "Operator revokes mandate and stops active call",
+        "security": [
+          {
+            "operatorBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "mandate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mandate revoked"
+          }
+        }
+      }
+    },
+    "/v1/calls": {
+      "post": {
+        "summary": "Agent consumes one-use mandate; does NOT dial until WS start",
+        "security": [
+          {
+            "agentBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "mandate_id"
+                ],
+                "properties": {
+                  "mandate_id": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{24}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Waiting for agent"
+          },
+          "403": {
+            "description": "Expired or used mandate"
+          },
+          "409": {
+            "description": "Only one active call supported"
+          }
+        }
+      }
+    },
+    "/v1/calls/{call_id}": {
+      "get": {
+        "summary": "Agent/operator reads local ARI observations and limitations",
+        "security": [
+          {
+            "agentBearer": []
+          },
+          {
+            "operatorBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "call_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Call state; carrier_release_verified always false"
+          }
+        }
+      }
+    },
+    "/v1/calls/{call_id}/tickets": {
+      "post": {
+        "summary": "Agent receives 20-second single-use media admission ticket",
+        "security": [
+          {
+            "agentBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "call_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Use in first WebSocket message, never URL"
+          }
+        }
+      }
+    },
+    "/v1/calls/{call_id}/stop": {
+      "post": {
+        "summary": "Independent operator stop; ARI release check is not carrier proof",
+        "security": [
+          {
+            "operatorBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "call_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stop attempted, channel absence reported separately"
+          }
+        }
+      }
+    },
+    "/v1/calls/{call_id}/media": {
+      "get": {
+        "summary": "WebSocket: admit ticket then send start; DT01 PCM binary frames and limited control JSON",
+        "description": "Ticket is supplied in the FIRST WebSocket text message {\"type\":\"admit\",\"ticket\":\"...\"}; then agent sends {\"type\":\"start\"}. No call begins before admission/start. Outgoing 16 kHz signed PCM16LE 20 ms frames (DT01 + 4-byte sequence + 8-byte timestamp + 640 samples). The connector converts them to RTP/L16. Incoming RTP is forwarded as DT01 after exact source validation. media.bridged does not mean media ready; media.ready follows validated first RTP. No public Internet access or carrier release verification.",
+        "parameters": [
+          {
+            "name": "call_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "101": {
+            "description": "WebSocket upgrade; admission required"
+          }
+        }
+      }
+    },
+    "/v1/readiness": {
+      "get": {
+        "summary": "Operator-only, non-dialling read-only ARI endpoint observation; NOT a route guarantee",
+        "description": "Authenticated operator bearer is required. Observes only the connector-configured fixed PJSIP endpoint through ARI. No call, OPTIONS verification, carrier test or billing can occur. The response always has network_call_authorised=false, with not_proven explicitly describing absent evidence.",
+        "security": [
+          {
+            "operatorBearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Endpoint observed; online does not mean a call will complete"
+          },
+          "401": {
+            "description": "Agent/unauthorised credential cannot probe the endpoint"
+          },
+          "503": {
+            "description": "ARI unavailable or endpoint observation failed; no dialling"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "operatorBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Local operator credential, NOT proof of verified human identity"
+      },
+      "agentBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Local independent agent credential, never ARI credentials"
+      }
+    }
+  }
+}

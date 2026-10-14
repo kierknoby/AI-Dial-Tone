@@ -1,0 +1,177 @@
+{
+  "schema_version": "0.0.1",
+  "name": "AI Dial-Tone",
+  "kind": "capability_directory",
+  "description": "End-to-end autonomous telephone calling platform in development: human-authorised tasks, optional managed x402 access, telco-controlled routing, live audio, independent hangup and evidence. Version 0.0.1 is a static public preview and local developer implementation, not a hosted calling service.",
+  "status": "technical_preview",
+  "origin": "https://ai.dial-tone.uk",
+  "discovery_format": "project_specific_nonstandard",
+  "available_now": {
+    "static_read_only": true,
+    "no_account_required": true,
+    "no_payment_required": true,
+    "machine_readable_scenarios": true,
+    "interactive_browser_simulation": true,
+    "public_live_calling": false,
+    "public_bidirectional_audio": false,
+    "hosted_mcp_server": false,
+    "hosted_a2a_agent": false,
+    "x402_payment": false,
+    "local_peer_voice_transport_demo": true,
+    "local_model_provider_adapter": true,
+    "real_speech_recognition_tested": true,
+    "local_audio_first_runtime": true,
+    "local_offline_asr_experiment": true,
+    "hosted_ai_speech_model_verified": false,
+    "experimental_self_hosted_asterisk_connector": true,
+    "real_asterisk_interoperability_verified": false,
+    "experimental_byot_live_origination_default_enabled": false,
+    "local_byot_http_ws_rtp_simulation_tested": true,
+    "local_x402_v2_payment_admission_fixture": true,
+    "real_x402_facilitator_or_settlement": false,
+    "local_operator_side_x402_to_byot_handoff": true,
+    "payment_to_byot_handoff_requires_live_origination_disabled": true,
+    "local_operator_only_byot_endpoint_readiness_probe": true
+  },
+  "links": {
+    "project_overview": "/overview.html",
+    "human_entry": "/humans.html",
+    "agent_guide": "/agents.txt",
+    "language_model_guide": "/llms.txt",
+    "public_static_scenarios": "/api/challenges.json",
+    "local_development_api_spec": "/api/openapi.json",
+    "safety": "/trust.html",
+    "status": "/status.html",
+    "complete_agent_reference": "/llms-full.txt",
+    "developer_reference": "/docs/index.html",
+    "json_api_reference": "/api/reference.json",
+    "agent_entry": "/agents.html",
+    "peer_contract": "/docs/peer-contract.html",
+    "native_security_source_inventory": "/docs/native-security.html",
+    "human_walkthrough": "/docs/human-journey.html",
+    "engineering_roadmap": "/docs/roadmap.html",
+    "mandate_design_schema": "/contracts/mandate.schema.json",
+    "peer_event_design_schema": "/contracts/peer-event.schema.json",
+    "peer_lab_reference": "/docs/peer-lab.html",
+    "local_peer_lab_openapi": "/api/peer-lab-openapi.json",
+    "audio_first_voice": "/docs/audio-first-voice.html",
+    "byot_reference": "/docs/byot-asterisk.html",
+    "byot_local_openapi": "/api/byot-openapi.json",
+    "local_x402_lab_reference": "/docs/x402-payment-admission.html",
+    "faq_page": "/faqs.html",
+    "faq_agent_json": "/api/faqs.json",
+    "local_payment_to_byot_handoff": "/docs/payment-telecom-handoff.html",
+    "pre_call_principle": "/readiness.html",
+    "pre_call_engineering": "/docs/pre-call-principle.html",
+    "author_and_origins": "/about.html",
+    "open_source_community": "/docs/origins.html",
+    "byot_readiness_contract": "/api/byot-openapi.json",
+    "product_scope": "/scope.html",
+    "product_scope_json": "/api/product-scope.json"
+  },
+  "safety": {
+    "no_real_calls": "NO_PUBLIC_HOSTED_CALLS; BYOT_EXPERIMENTAL_OPT_IN_ONLY",
+    "network_verified_events_available": false,
+    "agent_claims_are_verified": false,
+    "real_world_action_allowed": false
+  },
+  "scope": "Public website is static and has no hosted calling API. The separate public repository provides a localhost Peer Lab and an experimental self-hosted Asterisk ARI/RTP connector. BYOT origination defaults OFF, requires explicit operator-controlled configuration, and has been tested against simulated Asterisk only. No real SIP/PSTN call, x402, or booking is verified. A separate Python x402 v2 fixed-price admission experiment exists with a fake facilitator; no real payment is possible. Optional /v1/readiness is operator-authenticated and only observes the fixed PJSIP endpoint via ARI; it does not prove a callable route or authorise dialling.",
+  "documentation_edition": "0.0.1",
+  "release_version": "0.0.1",
+  "product_definition": {
+    "scope": "end_to_end_autonomous_telephone_calling",
+    "product_status": "designed_end_to_end_not_live",
+    "intended_agent_workflow": [
+      "discover_calling_capability",
+      "obtain_server_verified_bounded_human_authorisation",
+      "request_provider_call_admission_and_approved_route",
+      "satisfy_x402_if_managed_access_requires_it",
+      "connect_and_exchange_bidirectional_audio",
+      "end_call_under_independent_telecoms_authority",
+      "receive_network_events_cost_and_grounded_outcome"
+    ],
+    "access_models": {
+      "managed_calling": {
+        "target": "end_to_end_provider_managed_telecommunications",
+        "x402": "required_only_if_provider_policy_requires_payment",
+        "available_in_0_0_1": false
+      },
+      "bring_your_own_telecoms": {
+        "target": "same_agent_facing_calling_capability_with_developer_owned_PBX",
+        "provider_controls_routing_and_termination": true,
+        "experimental_local_connector_in_0_0_1": true,
+        "real_PSTN_verified": false
+      }
+    },
+    "telecoms_boundary": "The human authorises the task; the telecoms operator independently accepts or refuses the call, selects permitted routes, and enforces termination. AI agents cannot create, edit or remove PBX routes.",
+    "site_vs_source": {
+      "public_website": "product_and_machine_discovery_front_door_static_in_0_0_1",
+      "github_repository": "public_source_code_local_developer_labs_contracts_and_roadmap_not_a_hosted_service",
+      "repository_url": "https://github.com/kierknoby/AI-Dial-Tone"
+    }
+  },
+  "developer_paths": {
+    "integrate_agent": "/docs/quickstart.html",
+    "protocol_and_architecture": "/docs/architecture.html",
+    "bring_asterisk_freepbx": "/docs/byot-asterisk.html",
+    "payment_admission_lab": "/docs/x402-payment-admission.html",
+    "github_repository": "https://github.com/kierknoby/AI-Dial-Tone",
+    "production_acceptance_roadmap": "/docs/roadmap.html"
+  },
+  "developer_demo": {
+    "availability": "locally_runnable_from_source",
+    "source_command": "python tools/verify_first_call.py --out demo-output",
+    "requires": "Python 3.11+ and aiohttp==3.13.3",
+    "roles": [
+      "local_operator",
+      "independent_caller_peer",
+      "fictional_restaurant_peer"
+    ],
+    "proof_files": [
+      "demo-output/proof.json",
+      "demo-output/caller_heard.wav",
+      "demo-output/peer_heard.wav",
+      "demo-output/verification.json"
+    ],
+    "proof_scope": "local_bidirectional_pcm_and_session_termination_only",
+    "actual_pstn_call": false,
+    "actual_payment": false,
+    "real_world_booking": false,
+    "real_asr_or_model_quality_proven": false
+  },
+  "interface_availability": [
+    {
+      "type": "static_discovery",
+      "url": "/agents.json",
+      "publicly_hosted": true,
+      "callable_as_telephone_api": false
+    },
+    {
+      "type": "synthetic_scenarios",
+      "url": "/api/challenges.json",
+      "publicly_hosted": true,
+      "callable_as_telephone_api": false
+    },
+    {
+      "type": "local_peer_lab",
+      "spec": "/api/openapi.json",
+      "server": "http://127.0.0.1:8765",
+      "publicly_hosted": false,
+      "real_telephone_network_verified": false
+    },
+    {
+      "type": "experimental_self_hosted_byot",
+      "spec": "/api/byot-openapi.json",
+      "server": "http://127.0.0.1:8877",
+      "publicly_hosted": false,
+      "real_telephone_network_verified": false,
+      "operator_enable_live_origination_by_default": false
+    },
+    {
+      "type": "local_x402_payment_fixture",
+      "publicly_hosted": false,
+      "real_money_settlement": false,
+      "grants_network_dial_authority": false
+    }
+  ]
+}

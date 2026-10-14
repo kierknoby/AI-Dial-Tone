@@ -1,0 +1,40 @@
+# AI Dial-Tone — agent-readable technical preview
+# Machine-readable capabilities: /agents.json
+# Static scenario catalogue: /api/challenges.json
+# Product boundary decision register: /api/product-scope.json
+# Peer Lab API schema: /api/openapi.json (LOCAL SOURCE; NOT HOSTED)
+# Peer Lab API alias: /api/peer-lab-openapi.json (LOCAL SOURCE)
+# Human entry: /humans.html
+# Agent entry: /agents.html
+# Peer contract: /docs/peer-contract.html
+# Native security inventory: /docs/native-security.html
+# Local real two-peer PCM exchange: /docs/peer-lab.html
+# Roadmap: /docs/roadmap.html
+# Experimental speech-from-media pipeline: /docs/audio-first-voice.html
+# Complete developer reference: /docs/index.html
+# Full agent-readable documentation: /llms-full.txt
+# Model-focused context: /llms.txt
+
+AI Dial-Tone is an END-TO-END autonomous telephone calling product IN DEVELOPMENT.
+Target journey: discover capability; obtain human authorisation; request telco-controlled
+route admission; pay via x402 when managed access requires it; connect and converse;
+terminate under independent provider authority; receive network evidence and an outcome.
+Developer capabilities include model-neutral local Peer Lab audio, experimental Asterisk
+BYOT, and x402 admission research. These are parts of ONE intended agent-facing service.
+This public website is the product and machine-discovery entry point. The GitHub repository
+(https://github.com/kierknoby/AI-Dial-Tone) is the open-source developer implementation.
+This public site currently offers read-only technical information and synthetic call scenarios.
+It DOES NOT offer a publicly callable API, hosted MCP or A2A agent, PSTN calls,
+real-time agent audio, production accounts, or x402 payments at present.
+No fixture proves that a live telephone call took place. Do not represent simulated
+results as network observations or an agent's claims as verified outcomes.
+
+Start by downloading /agents.json and /api/challenges.json. For a locally runnable independent developer proof, install aiohttp==3.13.3, then run `python tools/verify_first_call.py --out demo-output` from the repository root. Its verification.json proves only local received audio and session termination.
+This agents.txt file is a project-specific guide; do not assume universal crawler support.
+
+LOCAL-ONLY FEATURE: source under peer-lab/ starts an independent HTTP/WebSocket agent peer experiment, with actual bidirectional PCM audio, operator-issued/revocable mandates and a WAV/JSON proof. The public website is static and does not host this lab. Optional offline speech recognition is implemented and was locally tested, but performed poorly. No accurate hosted speech-model conversation or real-world telephone call is claimed.
+
+BYOT Asterisk: optional, disabled-by-default self-hosted connector, fake ARI and real loopback UDP tests only; no real Asterisk/PSTN validation. See /docs/byot-asterisk.html and /api/byot-openapi.json. Do not call public hosted endpoints: none exist.
+
+PRE-CALL PRINCIPLE: /readiness.html and /docs/pre-call-principle.html. The original Windows Dial-Tone provides audible tone and trace; the agent version needs authenticated evidence and non-human test paths. Local operator-only BYOT /v1/readiness returns an endpoint observation, NOT a proven PSTN route.
+ORIGINS: /about.html and /docs/origins.html. Developed by Kieran Knowles-Byrne (@kierknoby), with 20tele and FreePBX UK experience; no third-party endorsement.

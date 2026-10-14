@@ -1,0 +1,54 @@
+{
+  "schema_version": "0.0.1",
+  "scenario": "no_answer",
+  "type": "static_scripted_fixture",
+  "task": "Inspect simulated ringing followed by no answer. Do not invent spoken information.",
+  "safety_note": "no answer is not consent or conversation",
+  "evidence_is_live": false,
+  "telephone_call_placed": false,
+  "events": [
+    {
+      "id": "fixture-no_answer",
+      "seq": 1,
+      "type": "call.created",
+      "state": "dialling",
+      "detail": "Illustrative call request",
+      "source": "browser_script",
+      "network_verified": false,
+      "trust": "illustrative_only",
+      "payment": null,
+      "at": "1970-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "fixture-no_answer",
+      "seq": 2,
+      "type": "call.ringing",
+      "state": "ringing",
+      "detail": "Simulated ringing",
+      "source": "browser_script",
+      "network_verified": false,
+      "trust": "illustrative_only",
+      "payment": null,
+      "at": "1970-01-01T00:00:00.550Z"
+    },
+    {
+      "id": "fixture-no_answer",
+      "seq": 3,
+      "type": "call.failed",
+      "state": "failed",
+      "detail": "NO_ANSWER · synthetic failure",
+      "source": "browser_script",
+      "network_verified": false,
+      "trust": "illustrative_only",
+      "payment": null,
+      "at": "1970-01-01T00:00:01.100Z"
+    }
+  ],
+  "checks": {
+    "terminal_state": "failed",
+    "network_verified": false,
+    "payment": null,
+    "source": "browser_script",
+    "sequence_is_contiguous": true
+  }
+}
