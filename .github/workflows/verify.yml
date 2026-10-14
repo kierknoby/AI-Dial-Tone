@@ -1,0 +1,43 @@
+name: AI Dial-Tone | Public Tests and Documentation
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  public:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install documentation and Peer Lab dependencies
+        run: python -m pip install 'markdown-it-py==4.2.0' 'aiohttp==3.13.3'
+      - name: Generate public docs and site
+        run: |
+          python tools/build-site.py
+          python tools/build-reference.py
+      - name: Public contract, license, and publication checks
+        run: npm run check
+      - name: Peer Lab transport and voice tests
+        run: npm run test:peer
+      - name: Experimental BYOT Asterisk ARI and RTP integration tests
+        run: npm run test:byot
+      - name: Local x402 v2 payment-admission contract tests
+        run: npm run test:x402
+      - name: Local x402 to BYOT mandate handoff regression tests
+        run: npm run test:handoff
+      - name: Local end-to-end audio and session proof (never PSTN)
+        run: python tools/verify_first_call.py --out demo-output
+      - name: Browser softphone laboratory tests
+        run: cd labs/web-softphone && npm test
+      - name: Python bot tests
+        run: cd labs/web-softphone && npm run test:bot
+      - name: Verify generated documentation is committed
+        run: git diff --exit-code -- site
