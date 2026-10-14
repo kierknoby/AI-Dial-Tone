@@ -8,7 +8,12 @@ def shell(title,description,active,body,script=''):
     canonical = ('https://ai.dial-tone.uk' + active) if active else None
     palette = 'blue' if active in ('/agents.html', '/developers.html', '/playground.html', '/docs/index.html') else 'gold'
     canonical_meta = (f'<link rel="canonical" href="{canonical}"><meta property="og:url" content="{canonical}">') if canonical else ''
-    nav=''.join(f'<a class="nav-link {"is-current" if url==active else ""}" href="{url}" {"aria-current=\"page\"" if url==active else ""}>{label}</a>' for label,url in NAV)
+    nav_links=[]
+    for label,url in NAV:
+        current_class='is-current' if url==active else ''
+        aria_current='aria-current="page"' if url==active else ''
+        nav_links.append(f'<a class="nav-link {current_class}" href="{url}" {aria_current}>{label}</a>')
+    nav=''.join(nav_links)
     return f'''<!doctype html>
 <html lang="en-GB"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">

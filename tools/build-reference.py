@@ -67,7 +67,12 @@ def anchors(content):
     return re.sub(r'<h([123])>(.*?)</h\1>',replace,content,flags=re.S),headings
 
 def doc_sidebar(active):
-    links=''.join(f'<a href="/docs/{slug}.html" {"aria-current=\"page\"" if slug==active else ""} class="ref-nav-link {"ref-active" if slug==active else ""}">{html.escape(label)}</a>' for label,slug in NAV)
+    nav_links=[]
+    for label,slug in NAV:
+        aria_current='aria-current="page"' if slug==active else ''
+        active_class='ref-active' if slug==active else ''
+        nav_links.append(f'<a href="/docs/{slug}.html" {aria_current} class="ref-nav-link {active_class}">{html.escape(label)}</a>')
+    links=''.join(nav_links)
     return f'<aside class="ref-sidebar" aria-label="Documentation navigation"><div class="ref-sidebar-inner"><span class="ref-sidebar-eyebrow">DOCUMENTATION / LOCAL LAB</span><a class="ref-home" href="/docs/index.html">← Documentation home</a><nav class="ref-nav">{links}</nav><div class="ref-sidebar-note">Preview only. No live PSTN, x402 settlement, or hosted agent API.</div></div></aside>'
 
 def document(item,i):

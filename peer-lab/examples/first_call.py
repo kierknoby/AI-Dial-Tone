@@ -34,7 +34,7 @@ async def api(http,method,url,token,data,idem=None):
 
 
 def synth(text):
-    """Returns local voice PCM or a 400ms audible tone when eSpeak is unavailable.
+    """Returns local voice PCM or a 1.2s audible tone when eSpeak is unavailable.
 
     Explicitly does not perform recognition or transcribe an incoming audio frame.
     """
@@ -47,7 +47,7 @@ def synth(text):
     else:
         import math
         pcm=b''.join(int(3500*math.sin(i/16000*2*math.pi*440)).to_bytes(2,'little',signed=True)
-                     for i in range(6400))
+                     for i in range(19200))
     n=((len(pcm)+639)//640)*640
     return pcm.ljust(n,b'\0')
 
