@@ -1,0 +1,163 @@
+{
+  "schema_version": "0.0.1",
+  "release_version": "0.0.1",
+  "as_of": "2026-10-11",
+  "publication_status": "public_technical_preview_local_tests_only",
+  "authority": "product scope and exclusions; planned capabilities are not availability commitments",
+  "product_purpose": "A standard model-neutral telephone capability for autonomous agents, retaining human mandate and independent telecoms authority.",
+  "website_role": "Static product discovery, guidance, examples and read-only specifications; not a hosted calling or payment service.",
+  "repository_role": "Open-source developer implementation, local experiments, reference contracts and tests; not production telecoms infrastructure.",
+  "availability": {
+    "hosted_pstn_calls": false,
+    "real_asterisk_verified": false,
+    "real_x402_settlement": false,
+    "public_mcp": false,
+    "public_a2a": false,
+    "real_world_bookings": false
+  },
+  "decisions": {
+    "included_in_0_0_1": [
+      {
+        "name": "Local agent audio",
+        "boundary": "Authenticated, bounded, two-peer WebSocket PCM sessions with local WAV and receipt evidence. Not a telephone call."
+      },
+      {
+        "name": "Operator control in local tests",
+        "boundary": "Local operator-issued mandates, explicit permission limits, revocation and stop demonstrated in lab tests."
+      },
+      {
+        "name": "Experimental speech pipeline",
+        "boundary": "Offline ASR/TTS and model-compatible adapters exercised with fixtures; no claim of useful production-grade dialogue."
+      },
+      {
+        "name": "Experimental self-hosted BYOT",
+        "boundary": "Operator-controlled Asterisk ARI/RTP reference bridge with synthetic HTTP, WebSocket and UDP tests. Origination is disabled by default, with no verified real Asterisk call."
+      },
+      {
+        "name": "Local payment research",
+        "boundary": "x402 v2 challenge and single-use admission using a fake facilitator. No real settlement or funds."
+      },
+      {
+        "name": "Local handoff proof",
+        "boundary": "Operator-side payment-to-BYOT mandate handoff with real origination deliberately disabled."
+      },
+      {
+        "name": "Static website and machine discovery",
+        "boundary": "Human and agent explanations, reproducible fixtures, local-only OpenAPI, documentation and FAQ. No hosted call API."
+      },
+      {
+        "name": "Developer research tooling",
+        "boundary": "Scripted playground, browser softphone lab, local verifier and automated contract tests."
+      }
+    ],
+    "target_capabilities_not_yet_available": [
+      {
+        "name": "Real, independently authorised telephone calling",
+        "boundary": "One agent-facing interface for managed and BYOT routes, with separate human mandate and operator admission."
+      },
+      {
+        "name": "Reliable SIP and media",
+        "boundary": "Isolated live Asterisk/SIP proof, secure signalling and media, independent network cutoff and reconciliation."
+      },
+      {
+        "name": "Useful natural speech",
+        "boundary": "Low-latency bidirectional speech with interruption, IVR, keypad entry, voicemail and accessible language handling."
+      },
+      {
+        "name": "Verifiable task receipts",
+        "boundary": "Network facts, conversation claims, payment status and confirmed external actions are separate evidence categories."
+      },
+      {
+        "name": "Interoperability",
+        "boundary": "Versioned public call contract with optional MCP tool and agent-to-agent adapters only after actual protocol conformance tests."
+      },
+      {
+        "name": "Responsible managed calling",
+        "boundary": "Explicit prices and call budgets; when applicable, real x402 settlement with durable reconciliation and a restricted compliant pilot."
+      },
+      {
+        "name": "Independent BYOT operator kit",
+        "boundary": "Documented install, operator-owned routing and termination, conformance tests and recovery without private project knowledge."
+      }
+    ],
+    "excluded_from_product_direction": [
+      {
+        "name": "Bulk unsolicited or mass marketing dialling",
+        "boundary": "No campaign engine or mass sales dialler. Any future calling must also satisfy applicable calling, privacy and consent rules."
+      },
+      {
+        "name": "Agent-controlled PBX administration",
+        "boundary": "Agents cannot configure trunks, routes, carrier accounts, caller identity or firewall controls."
+      },
+      {
+        "name": "Custom foundation speech or language model",
+        "boundary": "Use replaceable engines rather than build a competing model platform."
+      },
+      {
+        "name": "General-purpose CRM and workflow builder",
+        "boundary": "Expose safe task interfaces; do not become an all-purpose business automation suite."
+      },
+      {
+        "name": "Bespoke SIP replacement",
+        "boundary": "Use open telecoms standards instead of inventing a parallel telephone network."
+      },
+      {
+        "name": "Unverified success claims",
+        "boundary": "A model transcript, payment receipt or local simulation never proves a network call or external booking."
+      },
+      {
+        "name": "Unlimited routing through payment",
+        "boundary": "Payment is one narrow admission condition, not consent, route permission or a right to unrestricted calls."
+      }
+    ],
+    "deferred_or_not_decided": [
+      {
+        "name": "Inbound reception, campaigns and marketplaces",
+        "boundary": "Not first-release priorities; inbound may be evaluated independently. Bulk marketing remains excluded."
+      },
+      {
+        "name": "Call transfer and human takeover",
+        "boundary": "Requires additional destination authority and operator proof before adoption."
+      },
+      {
+        "name": "Managed pricing and unsuccessful-call policy",
+        "boundary": "Commercial model, refunds, retries, currencies and paying use cases not approved."
+      },
+      {
+        "name": "Privacy and retention policy",
+        "boundary": "Recording, storage, data residency, deletion and user notices require separate decisions."
+      },
+      {
+        "name": "Delegated human authority",
+        "boundary": "Organisation and delegate mandate models remain open."
+      },
+      {
+        "name": "Territory and compliance gates",
+        "boundary": "Permitted destinations, purpose classes, disclosure, operator obligations and lawful caller ID await review."
+      },
+      {
+        "name": "Public v1 compatibility promise",
+        "boundary": "Schema freeze, versioning and long-term support commitments not made in 0.0.1."
+      }
+    ]
+  },
+  "open_product_questions": [
+    "Can a verified organisational delegate authorise a call, and how is that delegation revoked?",
+    "How quickly does a mandate expire, and how are individual retries approved?",
+    "What non-audio records can be kept, and how do deletion requests interact with audit obligations?",
+    "What price model applies to answered, failed, unanswered and interrupted calls?",
+    "Where does the public managed API end and private operator control begin?",
+    "Can a self-hosting developer also act as the telecoms operator, and how is independence enforced?",
+    "Who authorises a transfer to an additional destination?",
+    "How do externally hosted agents authenticate and prove their commitments?",
+    "Which speech processing regions and fully local options are acceptable?",
+    "What constitutes independent PBX and SBC teardown proof on supported systems?",
+    "When is verbal agreement evidence, and when is a confirmation reference required?",
+    "Who handles abuse, complaints, refunds and support for managed versus BYOT calls?",
+    "Which AI caller disclosures are required for each territory and use case?",
+    "Which task categories and UK pilot routes, if any, may be allowed for paid calling?",
+    "What is the first stable API version and its backward-compatibility policy?"
+  ],
+  "release_rule": "0.0.1 ships research capabilities only. No planned feature is represented as available until independent acceptance evidence exists.",
+  "next_gate": "Prove one isolated operator-authorised real Asterisk call, media and independently verified network teardown with no PSTN egress."
+}
