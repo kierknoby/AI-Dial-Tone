@@ -71,8 +71,7 @@ $('apply').onclick=guard(async()=>{
 async function registerPhone(){
  if(phone)throw Error('DISCONNECT_FIRST');
  const c=validateConfig({wss:$('wss').value.trim(),aor:$('aor').value.trim(),user:$('user').value.trim(),password:$('password').value});
- // Experimental dependency must be bundled locally for any non-lab deployment.
- const {Web}=await import('https://esm.sh/sip.js@0.21.2');
+ const {Web}=await import('/vendor/sip.js');
  const client=new Web.SimpleUser(c.wss,{
   aor:c.aor,
   userAgentOptions:{authorizationUsername:c.user,authorizationPassword:c.password},

@@ -6,12 +6,14 @@ Run after actual DNS, HTTPS and hosting are configured; does not deploy anything
 import argparse
 import json
 import sys
+from pathlib import Path
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 from urllib.parse import urlparse
 from xml.etree import ElementTree
 
 REQUIRED_PAGES = ('/', '/privacy.html', '/scope.html', '/status.html', '/docs/quickstart.html', '/agents.json', '/api/product-scope.json', '/sitemap.xml', '/robots.txt', '/assets/style.css', '/assets/app.js')
+SITE = Path(__file__).resolve().parents[1] / 'site'
 
 def fetch(url):
     req = Request(url, headers={'User-Agent': 'AI-Dial-Tone-release-verifier/0.0.1'})
@@ -36,7 +38,12 @@ def validate(origin):
             required_mime='application/json' if path.endswith('.json') else ('text/html' if path=='/' or path.endswith('.html') else ('text/css' if path.endswith('.css') else ('text/javascript' if path.endswith('.js') else ('application/xml' if path.endswith('.xml') else 'text/plain'))))
             allowed={'application/javascript','text/javascript'} if required_mime=='text/javascript' else ({'application/xml','text/xml'} if required_mime=='application/xml' else {required_mime})
             if mime not in allowed:failures.append(f'{path}: unexpected content type {mime}, expected {required_mime}')
-            if (path=='/' or path.endswith(('.html','.json','.txt','.xml'))) and 'no-cache' not in lower.get('cache-control','') and 'max-age=0' not in lower.get('cache-control',''):
+            if path == '/robots.txt' and body != (SITE / 'robots.txt').read_bytes():
+                failures.append('/robots.txt: published content does not match the repository source')
+            # A short cache TTL is useful for changing pages and machine data.
+            # robots.txt is low-churn static metadata and may safely use the
+            # host's longer TTL when its published bytes match the source.
+            if (path=='/' or (path!='/robots.txt' and path.endswith(('.html','.json','.txt','.xml')))) and 'no-cache' not in lower.get('cache-control','') and 'max-age=0' not in lower.get('cache-control',''):
                 failures.append(f'{path}: missing short/revalidation cache policy')
             if path.endswith('.json'):
                 json.loads(body)

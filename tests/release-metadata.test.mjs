@@ -28,7 +28,8 @@ test('complete GPLv3 and accurate standalone licensing scope',async()=>{
 test('publish instructions do not touch the native Windows repo',async()=>{
  const p=await read('../PUBLISHING.md');
  assert.match(p,/kierknoby\/AI-Dial-Tone/);
- assert.match(p,/git push -u origin main/);
+ assert.match(p,/No publishing, commit, or push is performed by this guide/);
+ assert.doesNotMatch(p,/git push -u origin main/);
  assert.doesNotMatch(p,/git checkout AI|EgyptianEyes\/Dial-Tone\.git/);
 });
 
@@ -41,14 +42,28 @@ test('first public release has one consistent 0.0.1 version and no old private l
  const readme=await read('../README.md');
  const changelog=await read('../CHANGELOG.md');
  assert.equal(pkg.version,'0.0.1');assert.equal(webPkg.version,'0.0.1');
+ assert.equal(pkg.engines.node,'>=22');assert.equal(webPkg.engines.node,'>=22');
  assert.equal(peer.info.version,'0.0.1');assert.equal(manifest.release_version,'0.0.1');assert.equal(manifest.schema_version,'0.0.1');
  assert.equal(evidence.version,'0.0.1');
  const siteHtml=(await readdir(new URL('../site/',import.meta.url))).filter(x=>x.endsWith('.html') && x!=='404.html');
  const docsHtml=(await readdir(new URL('../site/docs/',import.meta.url))).filter(x=>x.endsWith('.html'));
  assert.equal(evidence.public_web_pages_total_excluding_404,siteHtml.length+docsHtml.length);
  assert.equal(evidence.public_suite_tests_passed,80);
- assert.equal(evidence.peer_lab_network_tests_passed,39);
- assert.equal(evidence.research_suite_total_tests_passed,80+39+22+20+12+33+3);
+ assert.equal(evidence.peer_lab_network_tests_discovered,39);
+ assert.equal(evidence.web_softphone_tests_discovered,33);
+ assert.equal(evidence.research_suite_tests_discovered,80+39+22+20+12+33+3);
+ assert.equal(evidence.current_verification.baseline_test_counts.passed,206);
+ assert.equal(evidence.current_verification.baseline_test_counts.skipped,3);
+ assert.equal(evidence.current_verification.baseline_test_counts.discovered,209);
+ const baseline=evidence.current_verification.baseline_test_counts;
+ assert.equal(baseline.discovered,baseline.executed+baseline.skipped);
+ assert.equal(baseline.executed,baseline.passed+baseline.failed);
+ const current=evidence.current_worktree_validation.test_counts;
+ assert.deepEqual(current,{discovered:210,executed:208,passed:208,skipped:2,failed:0});
+ assert.equal(current.discovered,current.executed+current.skipped);
+ assert.equal(current.executed,current.passed+current.failed);
+ assert.equal(evidence.current_worktree_validation.suites.web_softphone.passed,33);
+ assert.equal(evidence.current_worktree_validation.suites.web_softphone.skipped,0);
  assert.equal(evidence.first_call_verified_real_pstn,false);
  assert.equal(evidence.first_call_verified_real_payment,false);
  assert.match(readme,/^# AI Dial-Tone 0\.0\.1/m);

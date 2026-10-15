@@ -6,7 +6,7 @@ This is a separate browser experiment based on the user experience and diagnosti
 
 ## What the 0.0.1 browser lab implements
 
-- Localhost browser dialler using SIP.js 0.21.2 and WebRTC for test-only Asterisk WSS extensions. Human account registration and calling functions are coded, **but not tested against a live PBX**.
+- Localhost browser dialler using the locally served SIP.js 0.21.2 bundle and WebRTC for test-only Asterisk WSS extensions. Human account registration and calling functions are coded, **but not tested against a live PBX**.
 - `dialtone.agent.v2`, a documented bot control contract with correlated command results, structured events, session-local command deduplication and restricted call initiation.
 - WSS mutual authentication using one 32+ character random pairing secret, HMAC-SHA256, a fresh client nonce and fresh server nonce. The pairing token is **never transmitted** to the controller. The example Python server accepts **one successful pairing per secret**, requiring restart with a new secret to pair again.
 - Explicit operator call arming, allowlisted 2-6 digit test extensions, separate permission for audio, and separate action to turn on outgoing bot audio during an **answered** test call.
@@ -34,16 +34,24 @@ Future private telephone infrastructure (x402, PSTN, SBC, ARI): NOT CONNECTED
 
 ### Run locally
 
-Requires Node.js 22+, Python 3.11+, Python package `websockets>=14`, OpenSSL, and a current browser with WebRTC and AudioWorklet. `npm test` needs Python and OpenSSL to run its cross-language integration test, and skips that one test if prerequisites are missing. `npm run test:bot` tests the Python VAD.
+Requires Node.js 22+, Python 3.11+, Python package `websockets==16.0`, OpenSSL, and a current browser with WebRTC and AudioWorklet. Install the pinned JavaScript packages and generate the checked-in SIP.js browser bundle before starting the page:
 
 ```sh
+npm ci
+npm run build:sipjs
 npm test
 npm run test:bot
 npm start
 # Open http://127.0.0.1:8787 in the same machine's browser
 ```
 
-The browser page can be viewed offline, but SIP registration currently imports the **pinned** SIP.js 0.21.2 release from `esm.sh`. This remains an important security and deployment limitation. **Do not enter real SIP credentials in a web page whose dependency is fetched from a third-party CDN.** Before even a restricted field pilot, pin and bundle SIP.js locally, verify the bundled code, remove `esm.sh` from the Content Security Policy, and use HTTPS with an explicit hostname and access control.
+The cross-language WSS integration test is mandatory in `npm test`. Missing OpenSSL or `websockets` causes a clear test failure; it is not skipped. The workflow installs `websockets` from `requirements-test.txt`. This test checks HMAC mutual authentication, status/readiness/call/audio-enable commands, and matching binary PCM frames in both directions.
+
+`npm run test:browser` is a separate optional full Chromium UI/media integration. It requires Playwright and a provisioned Chromium at `/usr/bin/chromium`; it is not run by GitHub Actions because those browser dependencies are not provisioned by the required test job. This script exercises synthetic browser audio only, not SIP registration or a live call.
+
+The bundle is generated from the exact `sip.js@0.21.2` npm package with the exact `esbuild@0.25.11` build tool; `package-lock.json` pins the dependency tree. The bundle's separately included `SIP-JS-LICENSE.md` preserves its MIT licence. The npm package metadata identifies version 0.21.2, although its exported runtime `version` constant currently reports 0.21.1.
+
+Do not enter production SIP credentials in this experimental lab. Local bundling removes the SIP.js runtime dependency on a third-party JavaScript CDN; it does not make this page a production softphone or establish that its source/dependencies are independently audited.
 
 ### Start the Python bot lab
 

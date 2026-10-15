@@ -1,5 +1,9 @@
 # Deployment checklist · ai.dial-tone.uk
 
+## Current observed state (14 October 2026)
+
+The static website is reachable over HTTPS. The published `/robots.txt` was byte-for-byte identical to `site/robots.txt`; its observed response header was `Cache-Control: public, max-age=14400, must-revalidate`. That longer cache lifetime is reasonable for this low-churn file and is not evidence of stale content. The read-only verifier checks the robots file's content rather than imposing the short cache limit used for selected HTML/API documents. No hosting-account, DNS, or production configuration was changed during this verification. The public site is not a calling API, and live telephony and payment settlement remain unavailable.
+
 ## Before publishing
 
 1. Configure DNS for `ai.dial-tone.uk` to the static hosting provider. This package **does not** establish that DNS or the hostname is active.
@@ -15,7 +19,7 @@
 - `/llms.txt`, `/agents.txt`, `/llms-full.txt` as `text/plain; charset=utf-8`.
 - `/agents.json`, `/api/openapi.json`, `/api/reference.json`, `/api/challenges.json`, and `/api/scenarios/*.json` as `application/json`.
 - `/assets/*.js`, `/assets/*.mjs`, `/assets/*.css`, `/assets/*.svg` with correct content types.
-- `/robots.txt` and `/sitemap.xml` should point to `https://ai.dial-tone.uk`.
+- `/robots.txt` and `/sitemap.xml` should point to `https://ai.dial-tone.uk`. Verify that the served robots file matches `site/robots.txt`; its cache lifetime may be longer because it changes infrequently.
 
 ## Test URLs after deploying
 

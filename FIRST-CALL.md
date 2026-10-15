@@ -50,7 +50,7 @@ The verifier also writes `caller_heard.wav`, `peer_heard.wav` and `proof.json` t
 - Run `python tools/verify_first_call.py --out demo-output` again for a fresh demonstration. Do not treat a stale proof as a new run.
 - To validate existing output without starting a new demo, run `python tools/verify_first_call.py --out demo-output --verify-only`.
 - Keep generated WAVs, proof files and credentials out of commits and support tickets. They are ignored by the repository's `.gitignore` when saved in `demo-output/`.
-- For the extended tests run `npm run check` (Node 20+) and `npm run test:peer`.
+- For the extended tests run `npm run check` (Node 22+) and `npm run test:peer`.
 
 ## What comes next
 

@@ -4,13 +4,20 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "start": "node server.js",
     "test": "node --test",
     "test:bot": "python -m unittest discover -s bot -p 'test_*.py' -v",
     "test:browser": "python tests/browser_integration.py",
+    "build:sipjs": "node tools/build-sipjs.mjs",
     "test:all": "npm test && npm run test:bot"
+  },
+  "dependencies": {
+    "sip.js": "0.21.2"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.11"
   }
 }

@@ -1,24 +1,33 @@
 # AI Dial-Tone 0.0.1 — Initial public development release QA
 
-**Date:** 11 October 2026. **Repository:** proposed `kierknoby/AI-Dial-Tone` (`main`). **Disposition:** local research software, not an Internet service or production telephony.
+**Original QA snapshot:** 11 October 2026. **Repository:** `kierknoby/AI-Dial-Tone` (`main`). **Disposition:** public open-source technical preview, not an Internet calling service or production telephony.
+
+## Publication and hardening update (14 October 2026)
+
+The public repository, static site and an initial successful hosted Actions run have since been independently checked. The Actions run (#38625817798) passed on `35348ad0d34bfb5e89b5f1db1a9b7d3eaca19536`; it predates the current WSS and browser-dependency hardening changes and is not evidence that this worktree passed hosted CI. The live site was reachable over HTTPS, and its `robots.txt` bytes matched the repository copy. Its observed four-hour cache policy is acceptable for this low-churn file; the publication verifier was corrected to compare its bytes rather than reject its cache lifetime.
+
+This update makes the WSS integration mandatory in the local browser-lab test suite, adds exact npm dependency pins and a reproducibly built local SIP.js bundle, and updates the workflow to exercise those checks. The targeted WSS test and bundle build passed locally. Full test-suite, site-generation and publication-verifier results are recorded below only after those checks are run against the final worktree. No live PBX, carrier, payment, or production service was contacted.
 
 ## Test results
 
-| Test | Local result | Scope |
+| Test or check | 14 October local result | Scope |
 | --- | --- | --- |
-| `npm run check` | **75/75 passed** | Source-backed API/manifest/docs consistency, security boundaries, static website links |
-| `npm run test:peer` | **39/39 passed** | Actual localhost HTTP/WebSocket, PCM, ASR/model/TTS fixtures, stop/disconnect, malformed input, capacity |
-| `npm run test:x402` | **20/20 passed** | Local x402 v2 HTTP challenge and fixed-price admission contract; fake facilitator, tamper/replay/timeout/revoke checks only |
-| `npm run test:byot` | **22/22 passed** | Real local HTTP/WebSocket ARI protocol + UDP RTP against a synthetic Asterisk server; whitelists, tokens, PJSIP-online gate, admission, agent adapter, stop, hangup uncertainty |
-| `npm run test:handoff` | **12/12 passed** | Real x402 lab permit + actual local BYOT HTTP/WebSocket integration, call refused when origination disabled, tamper/replay/uncertainty tests |
-| `cd labs/web-softphone && npm test` | **33/33 passed** | Browser softphone research unit/contract tests (not live PBX) |
-| `cd labs/web-softphone && npm run test:bot` | **3/3 passed** | Python scripted bot tests |
-| `python tests/browser_smoke.py` | **Passed** | Chromium desktop and mobile static-site journeys; not real SIP |
-| `node tools/audit.mjs` | **Passed** | Static publication structure and internal links |
-| Site generation | **Reproducible** | `python tools/build-site.py && python tools/build-reference.py` |
-| Source archive audit | **Rechecked at final packaging** | Version `0.0.1`, no generated caches or bundled credentials; GitHub initial commit and first hosted CI remain the owner's responsibility |
+| `npm run check` | **81/81 passed** | Publication audit and public source/manifest/docs/security contract tests |
+| `npm run test:peer` | **37 passed, 2 skipped / 39 discovered** | Local HTTP/WebSocket, PCM, ASR/model/TTS fixtures, stop/disconnect, malformed input and capacity |
+| `npm run test:byot` | **22/22 passed** | Local ARI HTTP/WebSocket and UDP RTP against a synthetic Asterisk server |
+| `npm run test:x402` | **20/20 passed** | Local x402 v2 challenge/admission contract with a fake facilitator; no payment |
+| `npm run test:handoff` | **12/12 passed** | Local payment-fixture-to-BYOT handoff; origination disabled |
+| `cd labs/web-softphone && npm test` | **33/33 passed, 0 skipped** | Browser softphone contracts plus mandatory mutual-auth WSS, commands and bidirectional audio integration |
+| `cd labs/web-softphone && npm run test:bot` | **3/3 passed** | Python scripted-bot tests |
+| `python tools/verify_first_call.py --out /tmp/ai-dial-tone-hardening-proof-20261014` | **Passed** | Two received-audio WAVs and local termination evidence; no PSTN, payment, model-quality or booking proof |
+| `python tools/verify_publication.py --origin https://ai.dial-tone.uk` | **Passed** | Read-only HTTPS pages/assets, headers, redirects and source-matched robots.txt |
+| Site/reference generation and `git diff --exit-code -- site` | **Passed** | Generated site and reference match tracked outputs |
+| SIP.js `npm ci`, bundle build and generated-bundle diff check | **Passed** | Pinned local bundle; npm reported zero known vulnerabilities for this install |
+| Python syntax compilation | **Passed** | `tools/verify_publication.py` and `tools/verify_first_call.py` |
 
-The latest local automated test total is **209 tests** (80 public + 39 peer + 22 BYOT + 20 x402 + 12 handoff + 33 browser + 3 Python bot). The peer transport suite was also repeated successfully across three consecutive runs after the disconnect termination fix. Results are generated on local development tools, **not** from hosted CI or a production system. The repository's first hosted GitHub Actions run remains outstanding.
+The current local automated suites comprise **210 discovered tests: 208 passed, 2 skipped, 0 failed**. Both skips are peer-lab tests requiring offline speech tools/models unavailable in this environment. The WSS integration is no longer skipped and passed as part of the 33 browser-lab tests. The optional Playwright/Chromium browser softphone integration was not run. The successful hosted Actions run recorded above is for the earlier commit, not this worktree; current changes still require a new hosted run.
+
+For comparison, the pre-hardening snapshot comprised 209 discovered, 206 passed, and 3 skipped (including the then-optional WSS integration). That historical test count is retained in [RELEASE-EVIDENCE.json](RELEASE-EVIDENCE.json), separately from the results above. Local test results do not constitute production telecom or payment verification.
 
 ## Explicitly not verified
 
@@ -48,7 +57,7 @@ These additions are **development-contract proof only**. The end-to-end hosted p
 - Three new source-contract tests assert exact README wording, all 11 website paragraphs, page navigation and machine-discoverability.
 - Desktop and mobile Chromium runs verified the overview layout, readability, and absence of horizontal overflow.
 - No changes to original Windows softphone source, calling protocols, payment admission, or telephony runtime were made for this editorial update.
-- Version remains **0.0.1**. The project is not yet deployed.
+- Version remains **0.0.1**. At the time of this 11 October entry, the project was not yet deployed.
 
 ## Independent pre-publication follow-up (11 October 2026)
 
@@ -100,7 +109,7 @@ These additions are **development-contract proof only**. The end-to-end hosted p
 - Added `PRODUCT-SCOPE.md` and a source-of-truth `content/product-scope.json`; the site derives `/scope.html` and `/api/product-scope.json` from the same data. Two new contract tests compare the machine publication directly to the release source.
 - Browser lab: corrected an asynchronous test that asserted invalid HMAC rejection before the rejection completed; the same strict authentication failure and `4001` close condition remain mandatory.
 - Latest measured local result: **80 public, 39 peer, 22 BYOT, 20 x402, 12 operator handoff, 33 browser and 3 bot tests, 209 passing**. The two-peer verifier also executed and confirmed local received audio, session closure and false real-world success fields.
-- CI now includes the local audio verifier, but its first hosted run is pending publication. The site and GitHub repo are not independently validated on deployed infrastructure; the approved Project Overview is verified locally against its canonical source.
+- CI includes the local audio verifier. At the time of this 11 October entry, its first hosted run was pending and the site/repository had not yet been checked on deployed infrastructure; see the 14 October publication update above.
 - Release boundary: public preview only. No real PSTN, real Asterisk media path, trusted x402 settlement, real booking or provider teardown has been verified. See `RELEASE-READINESS.md` for remaining manual release checks.
 
 ### Final publication preparation checks (11 October 2026)

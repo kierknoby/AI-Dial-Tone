@@ -80,22 +80,20 @@ The design for AI Dial-Tone is to verify as much as possible **before dialling**
 ## Release Status
 
 - **Version:** 0.0.1, the first public development release (no earlier public release history).
-- **Repository:** [`kierknoby/AI-Dial-Tone`](https://github.com/kierknoby/AI-Dial-Tone), planned standalone `main` branch. The repository must be created by its owner before publication.
+- **Repository:** [`kierknoby/AI-Dial-Tone`](https://github.com/kierknoby/AI-Dial-Tone), published standalone repository on `main`.
 - **Status:** development / technical preview; not production-ready.
-- **Public site:** `https://ai.dial-tone.uk` is the intended address. The release package does not configure DNS or prove a live deployment.
+- **Public site:** [`ai.dial-tone.uk`](https://ai.dial-tone.uk) is published as a static information and developer-discovery site. It does not provide live calling or payment services.
 - **Private components:** managed carrier access, routing, and commercial billing are not included. A public x402 v2 admission lab and optional self-hosted Asterisk adapter are provided without any proprietary service implementation.
-
-The new GitHub repository may not yet exist. Source packages and local verification are available independently of publication.
 
 ## Compatibility
 
 | Component | Current requirement | What has been verified |
 | --- | --- | --- |
 | Website and documentation | Static HTTPS hosting | Local site generation and Chromium desktop/mobile smoke checks |
-| Public contracts | Node.js 20 or later | Local automated tests |
+| Public contracts | Node.js 22 or later | GitHub Actions uses Node.js 22 |
 | Documentation build | Python 3.11+; `markdown-it-py==4.2.0` | Local reference generation |
 | Peer Lab | Python 3.11+; `aiohttp==3.13.3` | Local HTTP/WebSocket and PCM tests |
-| Browser softphone lab | Modern WebRTC-capable browser and SIP.js | Local contract tests; no independently verified real Asterisk call |
+| Browser softphone lab | Node.js 22+, Python 3.11+, WebRTC-capable browser, `websockets==16.0`; `npm ci` and `npm run build:sipjs` | Mandatory WSS transport integration in CI; optional Chromium browser integration is not run in CI; no real Asterisk call verified |
 | Windows Dial-Tone | Separate MicroSIP-derived project; not part of this source tree | [EgyptianEyes/Dial-Tone](https://github.com/EgyptianEyes/Dial-Tone) (reference only) |
 | BYOT Asterisk reference connector | Python 3.11+; Asterisk ARI externalMedia (Asterisk 16.6+) | **Local simulated ARI HTTP/WebSocket and UDP tests only; no real PBX validation** |
 | Public hosted SIP, UK PSTN, x402 | Not offered | **No hosted service or real settlement**; local x402 challenge/replay tests only |
@@ -105,8 +103,9 @@ The Windows softphone has its own README, repository, build, and licence notices
 ## Requirements
 
 - Git for maintaining a local checkout.
-- Node.js 20+ and Python 3.11+ for running public validation.
+- Node.js 22+ and Python 3.11+ for running public validation.
 - The pinned Python dependencies shown below when running the documentation build or Peer Lab.
+- `websockets==16.0` from `labs/web-softphone/requirements-test.txt` for the mandatory browser-controller WSS integration test.
 - Optional Chromium/Playwright for browser smoke checks.
 - Optional eSpeak, PocketSphinx, or compatible speech APIs for audio-first experiments. **Do not use recorded personal conversations or real booking details in the lab.**
 
@@ -114,27 +113,25 @@ No FreePBX, Asterisk, SIP credentials, wallet, USDC balance, or carrier access i
 
 ## Installing
 
-Create an empty repository named `AI-Dial-Tone` under the `kierknoby` GitHub account. Do **not** initialise it with an additional README or licence if pushing this prepared source.
-
-### Option 1: Clone once published
+Clone the published repository:
 
 ```bash
 git clone https://github.com/kierknoby/AI-Dial-Tone.git
 cd AI-Dial-Tone
 ```
 
-### Option 2: Use the prepared source before publication
+Or use a source archive:
 
 Unzip the release archive into a new directory, then run the local development checks from that directory. It is a standalone source tree; it does not require or modify `EgyptianEyes/Dial-Tone`.
 
-See [PUBLISHING.md](PUBLISHING.md) for guarded first-push instructions. Do not upload the private calling backend or credentials.
+See [PUBLISHING.md](PUBLISHING.md) for repository, CI, dependency, and static-site verification guidance. The public repository and static website already exist; do not upload private calling infrastructure or credentials.
 
 ## Running the Public Project
 
 Run from the repository root:
 
 ```bash
-python -m pip install 'markdown-it-py==4.2.0'
+python -m pip install 'markdown-it-py==4.2.0' -r labs/web-softphone/requirements-test.txt
 python tools/build-site.py
 python tools/build-reference.py
 npm run check
@@ -263,6 +260,8 @@ Optional browser check (requires Playwright and Chromium):
 ```bash
 python tests/browser_smoke.py
 ```
+
+The browser softphone's mandatory WSS integration runs with `npm test` from `labs/web-softphone/`; install its pinned npm packages with `npm ci` first. The separate full Chromium UI/media test is optional and is not part of the GitHub Actions job.
 
 All checks are local/contract validations. They do not replace real SIP, model-provider, PBX, carrier, or x402 acceptance tests. Evidence and blockers are tracked in [release evidence](RELEASE-EVIDENCE.json), [ROADMAP.md](ROADMAP.md), [CHANGELOG.md](CHANGELOG.md), and `QA-REPORT.md` in the unpacked source package.
 

@@ -157,6 +157,8 @@ class Controller:
             try:
                 result = await self.command(cmd, tgt)
                 print('RESULT', cmd, result, flush=True)
+                if not isinstance(result, dict) or result.get('ok') is not True:
+                    raise RuntimeError('Browser rejected command: ' + cmd)
                 if cmd == 'audio.enable': self.audio_enabled = bool(result.get('ok'))
             except Exception as exc: print('DEMO STOPPED:', exc, flush=True);return
 

@@ -72,6 +72,27 @@ test('source, agent FAQ and release-evidence question counts cannot drift',async
   assert.equal(published.public_live_calling,false);
 });
 
+test('release evidence separates the historical local snapshot from later public verification',async()=>{
+  const evidence=await get('RELEASE-EVIDENCE.json');
+  const beforePublication=evidence.initial_prepublication_state;
+  assert.equal(beforePublication.captured_at,'2026-10-11');
+  assert.equal(beforePublication.public_site_deployed,false);
+  assert.equal(beforePublication.repository_created_remotely,false);
+  const current=evidence.current_verification;
+  assert.equal(current.repository.public,true);
+  assert.equal(current.website.https_reachable,true);
+  assert.equal(current.website.production_calling_available,false);
+  assert.equal(current.website.real_payment_available,false);
+  assert.equal(current.github_actions.conclusion,'success');
+  assert.equal(current.github_actions.commit,'35348ad0d34bfb5e89b5f1db1a9b7d3eaca19536');
+  assert.match(current.github_actions.scope_note,/predates the WSS hardening changes/);
+  const baseline=current.baseline_test_counts;
+  assert.equal(baseline.discovered,baseline.executed+baseline.skipped);
+  assert.equal(baseline.passed,baseline.executed);
+  assert.equal(baseline.failed,0);
+  assert.equal(baseline.skipped,3);
+});
+
 test('website claims distinguish experimental Asterisk connector from live carrier acceptance',async()=>{
   const site=await read('site/status.html');
   const agent=await read('site/agents.html');

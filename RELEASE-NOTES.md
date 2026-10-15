@@ -2,6 +2,12 @@
 
 **11 October 2026 · Local technical preview with experimental BYOT and x402 admission contracts**
 
+## Publication and maintenance note (14 October 2026)
+
+The 11 October release preparation was followed by publication of the public repository and static website. The initial hosted Actions run succeeded on commit `35348ad0d34bfb5e89b5f1db1a9b7d3eaca19536` (run [38625817798](https://github.com/kierknoby/AI-Dial-Tone/actions/runs/38625817798)); it does not include the changes in the current hardening worktree. The repository and website status in the original notes below is historical and must not be read as the present publication status.
+
+This maintenance update makes the WSS browser-lab integration a required test, bundles the pinned SIP.js dependency locally instead of loading it from a third-party runtime CDN, raises the declared Node.js minimum to 22, and corrects the publication verifier's robots.txt cache expectation. These changes do not enable or claim live SIP/PSTN calls, production payment settlement, or a hosted calling API. See [QA-REPORT.md](QA-REPORT.md) and [RELEASE-EVIDENCE.json](RELEASE-EVIDENCE.json) for validation scope and point-in-time evidence.
+
 The first public version of AI Dial-Tone is an independent repository under `kierknoby`, unrelated to the Windows softphone's Git history. It includes executable, authenticated bot-to-bot WebSocket PCM experiments, an audio-first ASR/model/TTS pipeline with fixture-tested interruption and operator stop, a static website, and human/agent documentation.
 
 ### What is demonstrable
@@ -68,7 +74,7 @@ There is no publicly hosted calling API, **real PBX/PSTN integration proof**, pr
 - Provide a clear `FIRST-CALL.md` demonstration, exact `verification.json` success fields, clean-run expectations and troubleshooting.
 - Supply the read-only `tools/verify_publication.py` for post-upload HTTPS, static discovery, HSTS/CSP and HTTP-to-HTTPS checks.
 - Refresh stale changelog figures and lock the public contact/onboarding boundaries under automated tests.
-- **No actual website upload, repository creation, hosted CI run or GitHub private-vulnerability-reporting setting is claimed.**
+- At the time of the 11 October release-preparation snapshot, no actual website upload, repository creation, hosted CI run or GitHub private-vulnerability-reporting setting was claimed. See the 14 October publication note above for subsequently verified facts and remaining owner actions.
 
 ### Refined six-colour palette consistency (final 0.0.1 visual revision, 11 October 2026)
 
